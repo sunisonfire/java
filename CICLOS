@@ -71,16 +71,31 @@ for (String n : nombres) {
 ## 2. Ejercicio con operadores ternarios
 
 ```java
-String[] nombres = {"David", "Pedro", "Pablo", "Maria", "Marta"};
+// Estática, dinámica.
+// Definición/estático:
+// String[] nombres={"David","Pedro","Pablo","Maria","Marta"};
+//                     0       1       2       3       4
 
-// Empezamos en el último índice del arreglo (length - 1)
-// porque los arreglos se indexan desde 0.
-// nombres.length = 5, entonces i empieza en 4 (Marta).
-for (int i = nombres.length - 1; i >= 0; i -= i % 2 == 0 ? 2 : 1) {
-    // i % 2 == 0  -> pregunta si i es PAR
-    // Si es par, resta 2 (i -= 2)
-    // Si es impar, resta 1 (i -= 1)
-    // Esto hace que el "salto" hacia atrás no sea siempre igual.
+// Ahora el arreglo se amplió a 8 elementos (índices 0 al 7)
+String[] nombres = {"David", "Pedro", "Pablo", "Maria", "Marta", "QQQQ", "aaa", "qqwqwq"};
+//                     0        1        2        3        4       5      6       7
+
+int i = 0;
+
+// Esta línea quedó comentada (buena decisión, porque no se usaba para nada)
+// boolean condicion = (i>0) || (i % 2 == 0 && i > 0);
+
+// cantidad = último índice válido del arreglo
+// nombres.length = 8, entonces cantidad = 8 - 1 = 7
+int cantidad = nombres.length - 1;
+
+// Antes esto estaba todo mezclado dentro del for con % y !=.
+// Ahora es mucho más legible porque usan la variable "cantidad":
+//
+// ¿cantidad es impar? (cantidad % 2 != 0)
+//   -> si SÍ es impar: empieza en cantidad - 1  (para arrancar en un índice PAR)
+//   -> si NO es impar (osea es par): empieza en cantidad tal cual
+for (i = (cantidad % 2 != 0 ? cantidad - 1 : cantidad); i >= 0; i -= 2) {
     System.out.println(nombres[i]);
 }
 ```
