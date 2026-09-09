@@ -100,7 +100,58 @@ for (i = (cantidad % 2 != 0 ? cantidad - 1 : cantidad); i >= 0; i -= 2) {
 }
 ```
 
+## 3. Ejercicio 3:
 
+```java
+//For y For Each
+int i = 0;
+boolean condicion = (i>0) || (i % 2 == 0 && i > 0);
 
+int cantidad = nombres.length - 1;
+for (i = (cantidad % 2 != 0 ? cantidad - 1 : cantidad); i >= 0; i -= 2) {
+    System.out.println(nombres[i]);
+}
+// (Esto es lo mismo que ya vimos: imprime aaa, Marta, Pablo, David)
 
-<img width="742" height="169" alt="image" src="https://github.com/user-attachments/assets/eed2b8ee-6aa4-4a3e-a97a-d7c2573fa619" />
+System.out.println("*************************");
+
+// Ahora sí, el for-each que comentamos antes: recorre TODO en orden
+for (String n : nombres) {
+    System.out.println(n);
+}
+
+//Leer edades
+// Le pide al usuario que escriba cuántos estudiantes va a registrar
+System.out.println("Ingrese la cantidad de estudiantes");
+
+// Scanner sirve para LEER lo que el usuario escribe por teclado
+// nextInt() lee específicamente un número entero
+int estudiantes = new Scanner(System.in).nextInt();
+
+// Se crea un arreglo de enteros vacío, con tamaño = lo que el usuario indicó
+// Ej: si estudiantes=3, el arreglo tendrá 3 espacios: [0, 0, 0]
+int edades[] = new int[estudiantes];
+
+// Ciclo for CLÁSICO para llenar el arreglo, uno por uno
+for (int j = 0; j < edades.length; j++) {
+    // Le avisa al usuario cuál estudiante está ingresando (j+1 para que se vea 1,2,3... no 0,1,2)
+    System.out.println("Estudiantes " + (j + 1));
+    
+    // Lee la edad que el usuario escribe y la guarda en la posición j del arreglo
+    edades[j] = new Scanner(System.in).nextInt();
+}
+
+System.out.println("PROMEDIO: ");
+
+// Variable donde se va acumulando la suma de todas las edades
+// Se declara como "double" (decimal) para que la división final no pierda precisión
+double suma = 0;
+
+// Otro for clásico: recorre el arreglo ya lleno, sumando cada edad
+for (int j = 0; j < edades.length; j++) {
+    suma += edades[j];   // equivale a: suma = suma + edades[j];
+}
+
+// Promedio = suma total / cantidad de estudiantes
+System.out.println("El promedio de edad es:  " + (suma / estudiantes));
+```
