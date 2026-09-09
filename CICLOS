@@ -155,3 +155,26 @@ for (int j = 0; j < edades.length; j++) {
 // Promedio = suma total / cantidad de estudiantes
 System.out.println("El promedio de edad es:  " + (suma / estudiantes));
 ```
+
+## 4. Diferencia entre isBlank e isEmpty
+
+isEmpty() → "¿Tiene 0 caracteres?"
+isBlank() → "¿Está vacío o solo tiene espacios?" ✅
+
+| Cadena   | isEmpty() | isBlank() |
+| -------- | --------- | --------- |
+| `""`     | ✅ true    | ✅ true    |
+| `" "`    | ❌ false   | ✅ true    |
+| `"   "`  | ❌ false   | ✅ true    |
+| `"\n"`   | ❌ false   | ✅ true    |
+| `"Hola"` | ❌ false   | ❌ false   |
+
+String a = "";
+String b = "   ";
+
+System.out.println(a.isEmpty()); // true
+System.out.println(a.isBlank()); // true
+
+System.out.println(b.isEmpty()); // false
+System.out.println(b.isBlank()); // true
+
