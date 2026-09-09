@@ -1,0 +1,177 @@
+# Apuntes de Java — Clase 3: Ciclos
+
+
+## 📌 Contenido de hoy
+
+- Ciclos
+
+---
+
+## 1. Ciclo FOR
+Ejercicio 1
+
+```java
+/* 
+Definicion/estatico:
+String[] nombres={"David","Pedro","Pablo","Maria","Marta"};
+                     0       1       2        3      4
+*/
+String[] nombres={"David","Pedro","Pablo","Maria","Marta"};
+
+for (int i = nombres.length - 1; i >= 0; i--) {
+    System.out.println(nombres[i]);
+}
+
+System.out.println("***********************");
+
+for (String n : nombres) {
+    System.out.println(n);
+}
+```
+Ejercicio 2:
+```java
+// Arreglo de cadenas
+String[] nombres = {
+    "David",
+    "Pedro",
+    "Pablo",
+    "Maria",
+    "Marta",
+    "QQQQ",
+    "aaa"
+};
+
+/*
+Recorrido de atrás hacia adelante
+saltando de 2 en 2
+*/
+
+// i comienza en la última posición (6)
+// mientras i sea par y mayor que 0
+// disminuye de 2 en 2
+for (int i = nombres.length - 1; i % 2 == 0 && i > 0; i -= 2) {
+
+    // Imprime el elemento ubicado en la posición i
+    System.out.println(nombres[i]);
+}
+
+// Imprime una línea separadora
+System.out.println("************************");
+
+// Recorre todo el arreglo con un for-each
+for (String n : nombres) {
+
+    // Imprime cada nombre del arreglo
+    System.out.println(n);
+}
+```
+
+---
+
+## 2. Condicionales ternarios
+
+```java
+
+```
+
+
+## 3. Switch
+
+```
+public class Explicacion_s2 {
+
+    public static void main(String[] args) {
+        /*SWITCH
+        CONDICIONAL 1 variable con base a su dato, aquellos no contemplados, 
+        quedan en default(int, string)
+        switch(variable){
+        case 1:
+        break;
+        case 2:
+        break;
+        default:
+        break;
+        
+        Realizar un aplicativo que calcule el valor a pagar por ADDI
+        mensualmente dependiendo de las cuotas escogidas
+        */
+        System.out.println("Ingrese el monto a financiar");
+        double monto=new Scanner(System.in).nextDouble();
+        System.out.println("Ingrese el numero de cuotas:1 - 3 - 6");
+        int option=new Scanner(System.in).nextInt();
+        double cuota=0;
+        switch (option) {
+            case 1:
+                cuota= monto* 0.03;
+                break;
+            case 3:
+                cuota= monto * 0.08;
+                break;
+            case 6:
+                cuota= monto * 0.11;
+                break;
+            default:
+                System.out.println("Cuota no encontrada, credito RECHAZADO");
+        }
+        System.out.println("El monto de cuota es: "+cuota);
+}
+}
+
+/* o se puede*/
+<img width="678" height="425" alt="image" src="https://github.com/user-attachments/assets/28b64fab-6c13-49cd-af3d-004a487e5a2c" />
+
+```
+
+---
+## Apuntes extra
+
+1. Cuidado con == para comparar decimales
+
+En tu código usas double para casi todo (dinero, iva, condena). Nunca compares double con == para verificar igualdad exacta (como hiciste con condena == 0), porque los decimales tienen errores de redondeo por cómo se almacenan en binario. Por ejemplo 0.1 + 0.2 == 0.3 da false en Java. Mejor usa comparaciones con un margen de tolerancia, o evita depender de igualdad exacta en decimales cuando puedas.
+
+2. Validar antes de dividir
+
+Ya lo mencioné con inversion, pero es un patrón general: cualquier división con un valor que viene del usuario necesita validación previa. Un if (denominador != 0) te ahorra un ArithmeticException (con enteros) o un Infinity/NaN silencioso (con doubles), que es peor porque no truena, simplemente da resultados absurdos sin avisar.
+
+3. Diferencia entre int y double al dividir
+
+Ojo con esto, es un error clásico de principiante:
+
+java
+int a = 5, b = 2;
+double resultado = a / b; // da 2.0, NO 2.5 ❌
+double resultado2 = (double) a / b; // da 2.5 ✅
+
+Si divides dos int, Java hace división entera y trunca el decimal antes de asignarlo al double. Hay que castear ((double)) al menos uno de los operandos.
+
+4. Scanner y el error típico nextInt() + nextLine()
+
+No lo usaste esta vez, pero te va a pasar pronto: si mezclas nextInt()/nextDouble() con nextLine() en el mismo Scanner, nextLine() a veces "se come" un salto de línea vacío y parece que se salta la pregunta. Cuando llegues a leer texto (String) después de un número, probablemente necesites un sc.nextLine() extra para "limpiar" el buffer.
+
+5. Nombres de variables: evita tildes y ñ
+
+Usaste años como nombre de variable — funciona en Java porque soporta Unicode, pero no es buena práctica: puede dar problemas de encoding según el editor/consola (verías símbolos raros), y la convención de la industria es nombrar variables en inglés sin caracteres especiales. Mejor anios o years.
+
+6. switch con Strings y enums (para más adelante)
+
+Ya viste switch con int. Cuando avances, vas a poder usarlo también con String:
+
+java
+switch (opcionTexto) {
+    case "mensual": ...
+    case "anual": ...
+}
+
+Y en versiones más nuevas de Java existe el switch expression (con -> en vez de : y sin necesidad de break), que es más moderno y menos propenso a errores de fall-through accidental. Si tu profesor menciona switch (x) { case 1 -> ...; }, es esa versión.
+
+7. Regla mental para elegir el condicional correcto
+
+Cuando dudes entre if, ternario o switch, pregúntate:
+
+¿Necesito ejecutar varias líneas de código (no solo devolver un valor)? → if/else
+¿Solo necesito asignar un valor según una condición simple? → ternario
+¿Estoy comparando una sola variable contra valores exactos y discretos? → switch
+
+## 📝 Notas
+
+<img width="742" height="169" alt="image" src="https://github.com/user-attachments/assets/eed2b8ee-6aa4-4a3e-a97a-d7c2573fa619" />
