@@ -178,3 +178,47 @@ System.out.println(a.isBlank()); // true
 System.out.println(b.isEmpty()); // false
 System.out.println(b.isBlank()); // true
 
+## 4. Ejercicio
+```java
+String nombre = JOptionPane.showInputDialog("Ingrese el nombre");
+while(nombre.isBlank()){
+    nombre = JOptionPane.showInputDialog("Error, Ingrese el nombre");
+}
+/*
+JOptionPane.showInputDialog(...) abre una ventanita emergente pidiendo un dato de texto.
+nombre.isBlank() comprueba si el texto está vacío o solo tiene espacios en blanco.
+El while es una validación: mientras el usuario no escriba un nombre válido, se le sigue preguntando con el mensaje de error.
+*/
+
+int edad = Integer.parseInt(JOptionPane.showInputDialog("Ingrese su edad"));
+
+/*
+Pide otro dato, pero esta vez lo convierte a número entero con Integer.parseInt(...), porque showInputDialog siempre devuelve texto (String).
+*/
+
+while((""+edad).isBlank() || edad<0){
+
+}
+
+/*
+(""+edad) convierte el número de vuelta a texto (concatenando con un String vacío).
+Pero un número nunca puede estar "en blanco" (isBlank()), porque edad es un int, no puede ser nulo ni vacío — como mucho será "0", "-5", etc. Esa condición nunca se cumplirá y es código muerto.
+El bucle está vacío (no hay nada dentro de las llaves { }), así que si edad < 0 fuera cierto, entraría en un bucle infinito que nunca termina, porque edad nunca cambia de valor dentro del bucle.
+*/
+int edad;
+while(true){
+    edad = Integer.parseInt(JOptionPane.showInputDialog("Ingrese su edad"));
+    if(edad >= 0) break;
+    JOptionPane.showMessageDialog(null, "Error, la edad no puede ser negativa");
+}
+
+//oooo
+
+int edad = Integer.parseInt(JOptionPane.showInputDialog("Ingrese su edad"));
+while(edad < 0){
+    edad = Integer.parseInt(JOptionPane.showInputDialog("Error, ingrese una edad válida"));
+}
+
+```
+
+## 5. Do
