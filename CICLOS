@@ -1,0 +1,80 @@
+# Apuntes de Java — Clase 3: Ciclos
+
+
+## 📌 Contenido de hoy
+
+- Ciclos
+
+---
+
+## 1. Ciclo FOR
+Ejercicio 1
+
+```java
+/* 
+Definicion/estatico:
+String[] nombres={"David","Pedro","Pablo","Maria","Marta"};
+                     0       1       2        3      4
+*/
+String[] nombres={"David","Pedro","Pablo","Maria","Marta"};
+
+for (int i = nombres.length - 1; i >= 0; i--) {
+    System.out.println(nombres[i]);
+}
+
+System.out.println("***********************");
+
+for (String n : nombres) {
+    System.out.println(n);
+}
+```
+Ejercicio 2:
+```java
+// Arreglo de cadenas
+String[] nombres = {
+    "David",
+    "Pedro",
+    "Pablo",
+    "Maria",
+    "Marta",
+    "QQQQ",
+    "aaa"
+};
+
+/*
+Recorrido de atrás hacia adelante
+saltando de 2 en 2
+*/
+
+// i comienza en la última posición (6)
+// mientras i sea par y mayor que 0
+// disminuye de 2 en 2
+for (int i = nombres.length - 1; i % 2 == 0 && i > 0; i -= 2) {
+
+    // Imprime el elemento ubicado en la posición i
+    System.out.println(nombres[i]);
+}
+
+// Imprime una línea separadora
+System.out.println("************************");
+
+// Recorre todo el arreglo con un for-each
+for (String n : nombres) {
+
+    // Imprime cada nombre del arreglo
+    System.out.println(n);
+}
+```
+
+---
+
+## 2. Condicionales ternarios
+
+```java
+
+```
+
+
+
+
+<img width="742" height="169" alt="image" src="https://github.com/user-attachments/assets/eed2b8ee-6aa4-4a3e-a97a-d7c2573fa619" />
