@@ -68,10 +68,21 @@ for (String n : nombres) {
 
 ---
 
-## 2. Condicionales ternarios
+## 2. Ejercicio con operadores ternarios
 
 ```java
+String[] nombres = {"David", "Pedro", "Pablo", "Maria", "Marta"};
 
+// Empezamos en el último índice del arreglo (length - 1)
+// porque los arreglos se indexan desde 0.
+// nombres.length = 5, entonces i empieza en 4 (Marta).
+for (int i = nombres.length - 1; i >= 0; i -= i % 2 == 0 ? 2 : 1) {
+    // i % 2 == 0  -> pregunta si i es PAR
+    // Si es par, resta 2 (i -= 2)
+    // Si es impar, resta 1 (i -= 1)
+    // Esto hace que el "salto" hacia atrás no sea siempre igual.
+    System.out.println(nombres[i]);
+}
 ```
 
 
