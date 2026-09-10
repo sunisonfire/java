@@ -1,0 +1,220 @@
+# Apuntes de Java — Clase 4: Ciclos
+
+
+## 📌 Contenido de hoy
+
+- Mayúsculas y minúsculas
+
+---
+
+## 1. Mayúsculas y Minúsculas
+
+
+```java
+package com.s2.cadenas_conversion;
+
+public class Cadenas_Conversion {
+    /* */
+    public static void main(String[] args) {
+        /*
+        Los String o cadenas de texto son inmutables.
+        Reasignar o reemplazar su informacion.
+        Mostrar visualmente el dato.
+        */
+
+        String nombre = "David dominguez con correo: alucard99@gmail.com";
+        System.out.println("Mayusculas: "+nombre.toUpperCase());
+        System.out.println("Minusculas: "+nombre.toLowerCase());
+        System.out.println("Contiene @? "+nombre.contains("@"));
+        for (int i = 0; i < nombre.length(); i++) {
+            if(nombre.charAt(i)=='@'){
+                System.out.println(true);
+            }else{
+                System.out.println(false);
+            }
+        }
+        System.out.println(nombre);
+    }
+}
+```
+
+---
+
+## 2. Void
+Metodo vacio que no retorna nada
+
+```java
+/*Funciones de validacion*/
+/*Funcion de retorno dato, vacia.
+Metodos y funciones:
+void
+dato*/
+
+/*
+TipoEncapsulamiento void/variable_retorno nombre_funcion (parametros){
+
+    return ; //void no se hace nada
+
+}
+*/
+
+void saludo(String nombre){
+    System.out.println("Bienvenido ".concat(nombre));
+}
+
+public static void main(String[] args) {
+    Cadenas_Conversion cadenas = new Cadenas_Conversion();
+    cadenas.saludo("David");
+}
+```
+
+## 3. Static void
+
+```java
+package com.s2.cadenas_conversion;
+
+public class Cadenas_Conversion {
+
+    /*Funciones de validacion*/
+    /*Funcion de retorno dato, vacia.
+    Metodos y funciones:
+    void
+    dato*/
+
+    /*
+    TipoEncapsulamiento void/variable_retorno nombre_funcion (parametros){
+
+        return ; //void no se hace nada
+
+    }
+    */
+
+    static void saludo(String nombre){
+        System.out.println("Bienvenido ".concat(nombre));
+    }
+
+    public static void main(String[] args) {
+        saludo("David");
+    }
+}
+```
+
+## 4. Validar caracter
+```
+static boolean validar_caracter(String texto, char caracter){
+    for (int i = 0; i < texto.length(); i++) {
+        if (texto.charAt(i) == caracter) {
+            return true;
+        }
+    }
+    return false;
+```
+
+## 5. Ejemplo con Pedidos
+Para vista
+```java
+static boolean validar_entero(String op) {
+    for (int i = 0; i < op.length(); i++) {
+        if (!Character.isDigit(op.charAt(i))) {
+            return false;
+        }
+    }
+    return true;
+}
+    void menu() {
+      System.out.println("""
+                      OPCIONES:
+                      1- Usuarios.
+                      2- Pedidos.
+                      3- Salir
+                      """);
+  
+      String op = new Scanner(System.in).nextLine();
+  
+      while (!validar_entero(op)) {
+          System.out.println("Opcion incorrecta!");
+          op = new Scanner(System.in).nextLine();
+      }
+  
+      gestion_menus gm = new gestion_menus();
+      gm.gestion_principal(Integer.parseInt(op));
+  }
+```
+
+## 6. JAVA EJEMPLO
+
+```java
+import java.util.Scanner;
+
+public class menu_principal {
+
+    static boolean validar_entero(String op) {
+        for (int i = 0; i < op.length(); i++) {
+            if (!Character.isDigit(op.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public int menu() {
+
+        System.out.println("""
+                OPCIONES:
+                1- Usuarios.
+                2- Pedidos.
+                3- Salir
+                """);
+
+        String op = new Scanner(System.in).nextLine();
+
+        while (!validar_entero(op)) {
+            System.out.println("Opcion incorrecta!");
+            op = new Scanner(System.in).nextLine();
+        }
+
+        return Integer.parseInt(op);
+    }
+}
+```
+
+```java
+package controlador;
+
+import vista.menu_principal;
+
+public class gestion_menus {
+
+    public void gestion_principal() {
+
+        menu_principal mp = new menu_principal();
+        int op;
+
+        do {
+            op = mp.menu();
+
+            switch (op) {
+                case 1 ->
+                    System.out.println("Llamando a opcion menu usuarios");
+
+                case 2 ->
+                    System.out.println("Llamando a opcion menu pedidos");
+
+                case 3 ->
+                    System.out.println("Aplicacion terminada");
+
+                default ->
+                    System.out.println("Opcion no encontrada");
+            }
+
+        } while (op != 3);
+    }
+}
+``
+```
+## Terminologia:
+modelo vvc
+vpn por capas
+arquitectura hexagonal
+modelo vista controlador
+objeto que administra conecciones a base de datos
