@@ -1,149 +1,184 @@
 # Apuntes de Java — Clase 4: Ciclos
 
-
 ## 📌 Contenido de hoy
 
 - Mayúsculas y minúsculas
+- Métodos `void`
+- Métodos `static void`
+- Validación de caracteres
+- Ejemplo aplicado: menú de pedidos (patrón MVC)
 
 ---
 
 ## 1. Mayúsculas y Minúsculas
 
+Los `String` en Java son **inmutables**: ningún método los modifica "en el sitio", sino que
+**devuelve un nuevo `String`** con el resultado. Por eso `toUpperCase()` y `toLowerCase()`
+no cambian `nombre`, solo retornan una copia transformada.
 
 ```java
 package com.s2.cadenas_conversion;
 
 public class Cadenas_Conversion {
-    /* */
+
     public static void main(String[] args) {
         /*
-        Los String o cadenas de texto son inmutables.
-        Reasignar o reemplazar su informacion.
-        Mostrar visualmente el dato.
-        */
+         * Los String (cadenas de texto) son inmutables:
+         * no se pueden reasignar ni modificar directamente sus caracteres.
+         * Cada operación (toUpperCase, toLowerCase, etc.) devuelve un String nuevo.
+         */
 
         String nombre = "David dominguez con correo: alucard99@gmail.com";
-        System.out.println("Mayusculas: "+nombre.toUpperCase());
-        System.out.println("Minusculas: "+nombre.toLowerCase());
-        System.out.println("Contiene @? "+nombre.contains("@"));
+
+        System.out.println("Mayusculas: " + nombre.toUpperCase());
+        System.out.println("Minusculas: " + nombre.toLowerCase());
+        System.out.println("Contiene @? " + nombre.contains("@"));
+
+        // Recorremos el String caracter por caracter buscando '@'.
+        // Nota: esto imprime true/false en CADA posición, no solo cuando lo encuentra.
+        // Es útil para practicar el recorrido, pero en la práctica conviene usar
+        // directamente nombre.contains("@") como se hizo arriba.
         for (int i = 0; i < nombre.length(); i++) {
-            if(nombre.charAt(i)=='@'){
+            if (nombre.charAt(i) == '@') {
                 System.out.println(true);
-            }else{
+            } else {
                 System.out.println(false);
             }
         }
-        System.out.println(nombre);
+
+        System.out.println(nombre); // el String original permanece intacto
     }
 }
 ```
 
 ---
 
-## 2. Void
-Metodo vacio que no retorna nada
+## 2. `void`
+
+Un método `void` **no retorna ningún dato**; solo ejecuta una acción (por ejemplo, imprimir algo).
 
 ```java
-/*Funciones de validacion*/
-/*Funcion de retorno dato, vacia.
-Metodos y funciones:
-void
-dato*/
-
 /*
-TipoEncapsulamiento void/variable_retorno nombre_funcion (parametros){
+ * Firma general de un método:
+ *
+ * tipoDeRetorno nombreDelMetodo(parametros) {
+ *     // cuerpo
+ *     return valor;   // omitido si el método es void
+ * }
+ */
 
-    return ; //void no se hace nada
-
-}
-*/
-
-void saludo(String nombre){
+// Método de instancia: requiere un objeto de la clase para poder llamarse
+void saludo(String nombre) {
     System.out.println("Bienvenido ".concat(nombre));
 }
 
 public static void main(String[] args) {
+    // Como saludo() NO es static, se necesita instanciar la clase primero
     Cadenas_Conversion cadenas = new Cadenas_Conversion();
     cadenas.saludo("David");
 }
 ```
 
-## 3. Static void
+> 💡 **Tip:** si `saludo` no es `static`, no se puede llamar directamente desde `main`
+> (que sí es `static`) sin antes crear un objeto (`new Cadenas_Conversion()`).
+
+---
+
+## 3. `static void`
+
+Al marcar el método como `static`, pertenece a la **clase** y no a una instancia particular.
+Por eso puede llamarse directamente desde `main` sin necesidad de crear un objeto.
 
 ```java
 package com.s2.cadenas_conversion;
 
 public class Cadenas_Conversion {
 
-    /*Funciones de validacion*/
-    /*Funcion de retorno dato, vacia.
-    Metodos y funciones:
-    void
-    dato*/
-
-    /*
-    TipoEncapsulamiento void/variable_retorno nombre_funcion (parametros){
-
-        return ; //void no se hace nada
-
-    }
-    */
-
-    static void saludo(String nombre){
+    // Método static: pertenece a la clase, se invoca sin instanciar el objeto
+    static void saludo(String nombre) {
         System.out.println("Bienvenido ".concat(nombre));
     }
 
     public static void main(String[] args) {
-        saludo("David");
+        saludo("David"); // llamada directa, sin "new"
     }
 }
 ```
 
-## 4. Validar caracter
-```
-static boolean validar_caracter(String texto, char caracter){
+---
+
+## 4. Validar carácter
+
+Método que recorre un `String` buscando un carácter específico. Retorna `true` en cuanto
+lo encuentra (corte temprano), o `false` si termina el recorrido sin hallarlo.
+
+```java
+static boolean validar_caracter(String texto, char caracter) {
     for (int i = 0; i < texto.length(); i++) {
         if (texto.charAt(i) == caracter) {
-            return true;
+            return true; // apenas se encuentra, se corta el ciclo
         }
     }
-    return false;
+    return false; // se recorrió todo el texto y no apareció
+}
 ```
 
-## 5. Ejemplo con Pedidos
-Para vista
+---
+
+## 5. Ejemplo con Pedidos (validación de menú)
+
+Método que valida que la opción ingresada por el usuario sea **numérica**, y un método
+`menu()` que insiste hasta recibir una entrada válida.
+
 ```java
 static boolean validar_entero(String op) {
     for (int i = 0; i < op.length(); i++) {
         if (!Character.isDigit(op.charAt(i))) {
-            return false;
+            return false; // apenas encuentra un caracter que no es dígito, corta
         }
     }
     return true;
 }
-    void menu() {
-      System.out.println("""
-                      OPCIONES:
-                      1- Usuarios.
-                      2- Pedidos.
-                      3- Salir
-                      """);
-  
-      String op = new Scanner(System.in).nextLine();
-  
-      while (!validar_entero(op)) {
-          System.out.println("Opcion incorrecta!");
-          op = new Scanner(System.in).nextLine();
-      }
-  
-      gestion_menus gm = new gestion_menus();
-      gm.gestion_principal(Integer.parseInt(op));
-  }
+
+void menu() {
+    System.out.println("""
+            OPCIONES:
+            1- Usuarios.
+            2- Pedidos.
+            3- Salir
+            """);
+
+    String op = new Scanner(System.in).nextLine();
+
+    // Repite la pregunta mientras la entrada NO sea un número válido
+    while (!validar_entero(op)) {
+        System.out.println("Opcion incorrecta!");
+        op = new Scanner(System.in).nextLine();
+    }
+
+    gestion_menus gm = new gestion_menus();
+    gm.gestion_principal(Integer.parseInt(op));
+}
 ```
 
-## 6. JAVA EJEMPLO
+> ⚠️ **Cuidado:** crear un `new Scanner(System.in)` en cada iteración/llamada no es
+> el patrón recomendado (puede dar problemas al leer entrada más adelante).
+> Lo ideal es declarar **un solo** `Scanner` como atributo o parámetro y reutilizarlo
+> en todo el programa.
+
+---
+
+## 6. Ejemplo completo: patrón MVC (Vista → Controlador)
+
+Este ejemplo separa responsabilidades siguiendo el patrón **Modelo-Vista-Controlador (MVC)**:
+- **Vista** (`menu_principal`): solo se encarga de mostrar el menú y leer/validar la opción.
+- **Controlador** (`gestion_menus`): decide qué hacer según la opción elegida.
+
+### Vista
 
 ```java
+package vista;
+
 import java.util.Scanner;
 
 public class menu_principal {
@@ -178,6 +213,8 @@ public class menu_principal {
 }
 ```
 
+### Controlador
+
 ```java
 package controlador;
 
@@ -190,31 +227,34 @@ public class gestion_menus {
         menu_principal mp = new menu_principal();
         int op;
 
+        // do-while: se ejecuta al menos una vez, ideal para menús interactivos
         do {
             op = mp.menu();
 
             switch (op) {
-                case 1 ->
-                    System.out.println("Llamando a opcion menu usuarios");
-
-                case 2 ->
-                    System.out.println("Llamando a opcion menu pedidos");
-
-                case 3 ->
-                    System.out.println("Aplicacion terminada");
-
-                default ->
-                    System.out.println("Opcion no encontrada");
+                case 1 -> System.out.println("Llamando a opcion menu usuarios");
+                case 2 -> System.out.println("Llamando a opcion menu pedidos");
+                case 3 -> System.out.println("Aplicacion terminada");
+                default -> System.out.println("Opcion no encontrada");
             }
 
-        } while (op != 3);
+        } while (op != 3); // se repite hasta que el usuario elija "Salir"
     }
 }
-``
 ```
-## Terminologia:
-modelo vvc
-vpn por capas
-arquitectura hexagonal
-modelo vista controlador
-objeto que administra conecciones a base de datos
+
+> 📝 **Nota de consistencia:** en el apunte 5 se llama `gm.gestion_principal(Integer.parseInt(op))`
+> (con parámetro), pero en el ejemplo MVC completo `gestion_principal()` no recibe
+> parámetros: es el propio método el que llama internamente a `mp.menu()`. Al armar el
+> proyecto final, hay que decidir un solo enfoque y mantenerlo igual en todas las clases.
+
+---
+
+## 📚 Terminología
+
+| Término | Descripción breve |
+|---|---|
+| **MVC** (Modelo-Vista-Controlador) | Patrón que separa datos (Modelo), interfaz (Vista) y lógica de control (Controlador) |
+| **Arquitectura por capas** | Organiza el sistema en capas (presentación, negocio, datos) con responsabilidades independientes |
+| **Arquitectura hexagonal** | Aísla la lógica de negocio del mundo exterior (UI, BD, APIs) mediante puertos y adaptadores |
+| **DAO / objeto de conexión a BD** | Objeto encargado de administrar las conexiones y operaciones contra la base de datos |
