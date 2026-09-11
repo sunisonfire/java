@@ -1,0 +1,216 @@
+# Apuntes de Java — Clase 5: Programación Orientada a Objetos
+
+## 📌 Contenido
+
+- Pilares de la Programación Orientada a Objetos
+- Modificadores de acceso en Java
+- Paquete `modelo`: entidades y reglas de acceso
+- Estructura de la clase `usuario`
+- Ejemplo de instanciación de objetos (`example`)
+- Ejemplo de creación dinámica de arreglos de objetos (`main`)
+- Estructura del proyecto
+- Terminología
+
+---
+
+## 🏛️ Pilares de la POO
+
+- **Abstracción**
+- **Herencia**
+- **Encapsulamiento** (seguridad, acceso e integridad de las variables)
+  - Niveles: privadas, públicas, protegidas, default
+  - Estructura relacionada (patrón MVC): Vista, Modelo, Controlador
+- **Polimorfismo**
+
+---
+
+## 🔐 Modificadores de Acceso
+
+#### 🔒 *Privado* (`private`)
+Solo se tiene acceso dentro de la misma clase. Se usa para almacenar atributos de clase que deseamos proteger y controlar el acceso a ellos.
+
+#### 🔓 *Público* (`public`)
+Permite el acceso desde cualquier paquete o clase: externo, interno y todas sus subclases.
+
+#### 🔐 *Protegido* (`protected`)
+Permite acceso dentro del mismo paquete. Si se quiere obtener acceso a un dato protegido desde otro paquete, debe hacerse únicamente por medio de herencia.
+
+#### 🗝️ *Default* (sin modificador)
+Acceso dentro del mismo paquete; ningún paquete externo puede acceder.
+
+### Tabla resumen
+
+| Modificador | Misma Clase | Mismo Paquete (Package) | Subclase (Diferente Paquete) | Cualquier Otro Lugar (Mundo) |
+| :--- | :---: | :---: | :---: | :---: |
+| **`public`** | Sí | Sí | Sí | Sí |
+| **`protected`** | Sí | Sí | Sí | No |
+| **`default`** (sin modificador) | Sí | Sí | No | No |
+| **`private`** | Sí | No | No | No |
+
+---
+
+## 🎯 Descripciones
+
+### Paquete `modelo` (Funciones lógicas)
+
+**Funciones y entidades:**
+
+**CLASE** → Representación abstracta de un **objeto**: algo tangible o intangible. Contiene *atributos* (características que posee un objeto, como id, cédula, nombre, apellido, sexo, username, contraseña).
+
+Este paquete representa la capa de negocio y persistencia de la aplicación. Contiene las entidades de datos y la lógica central del sistema. Para garantizar la seguridad y consistencia de los datos, aplicamos los siguientes modificadores de acceso en sus componentes:
+
+- **Entidades y Clases (`public`):** las clases que definen los objetos del negocio deben ser públicas para que otras capas (como el controlador o la interfaz de usuario) puedan instanciarlas.
+- **Atributos de Datos (`private`):** todas las variables y campos de las entidades se ocultan al exterior. Su acceso y modificación se restringe y controla exclusivamente a través de métodos **Getters y Setters** (`public`).
+- **Lógica Interna y Métodos de Validación (`private` o `protected`):** las funciones secundarias que solo sirven de apoyo a la lógica principal del modelo se mantienen ocultas para no exponer detalles de implementación.
+- **Relaciones de Herencia (`protected`):** se utiliza este modificador en atributos o métodos que deban ser heredados y extendidos por clases hijas dentro del mismo dominio de datos.
+
+---
+
+## 1. Estructura Modelo — clase `Usuario`
+
+```java
+public class usuario {
+    private int id;
+    private String nombre;
+    private String apellido;
+    private String cedula;
+    private String username;
+    private String contraseña;
+    private int edad;
+    private String tipo_edad;
+
+    public usuario(int id, String nombre, String apellido, String cedula, String username, String contraseña, int edad) {
+        this.id = id;
+        this.nombre = nombre;
+        this.apellido = apellido;
+        this.cedula = cedula;
+        this.username = username;
+        this.contraseña = contraseña;
+        this.edad = edad;
+        this.tipo_edad=edad >=18 ? "Mayor de edad" : "Menor de edad";
+    }
+}
+```
+
+> **Nota:** esta clase define el constructor y los atributos privados, pero para que `example.java` funcione (ver sección 2) necesita además los métodos **Getters** (por ejemplo `getNombre()`), ya que los atributos son `private` y no pueden leerse directamente desde otra clase.
+
+## 2. Estructura Modelo — clase `example`
+
+```java
+public class example {
+    public static void main(String[] args) {
+        usuario Jungwon=new usuario(1, "Jungwon", "Yang", "1009", "yngjwn", "engene", 21);
+        usuario Heeseung=new usuario(2, "Heeseung", "Lee", "1010", "h_evan", "engene", 25);
+        usuario Jay=new usuario(3, "Jongseong", "Park", "1011", "jaypark", "engene", 24);
+        usuario Jake=new usuario(4, "Jake", "Shim", "1012", "jakey", "engene", 23);
+        usuario Sunghoon=new usuario(5, "Sunghoon", "Park", "1013", "hoonie", "engene", 23);
+        usuario Sunoo=new usuario(6, "Sunoo", "Kim", "1014", "engene","sunnie", 22);
+        usuario Riki=new usuario(7, "Nishimura", "Riki", "1015", "rikisi", "engene", 20);
+        
+        System.out.println(Jungwon.getNombre());
+        System.out.println(Heeseung.getNombre());
+        System.out.println(Jay.getNombre());
+        System.out.println(Jake.getNombre());
+        System.out.println(Sunghoon.getNombre());
+        System.out.println(Sunoo.getNombre());
+        System.out.println(Riki.getNombre());
+    }
+}
+```
+
+## 3. Estructura para crear objetos (package `vista`, class `main`)
+
+```java
+package vista;
+
+// Importar la clase usuario desde el paquete modelo
+import modelo.usuario; 
+
+public class main {
+
+    public static Object[] agregarUsuario(Object[] old, Object user) {
+        Object[] nuevo;
+
+        if (old == null) {
+            nuevo = new Object[1];
+            nuevo[0] = user;
+        } else {
+            nuevo = new Object[old.length + 1];
+
+            for (int i = 0; i < old.length; i++) {
+                nuevo[i] = old[i];
+            }
+
+            nuevo[old.length] = user;
+        }
+
+        return nuevo;
+    }
+
+    public static void main(String[] args) {
+
+        String[] empleados = new String[3];
+        empleados[0] = "david";
+        empleados[1] = "maria";
+        empleados[2] = "marta";
+
+        String[] d = {"david", "rerer", "Rererwe"};
+
+        usuario[] d_usuario = new usuario[3];
+        d_usuario[0] = new usuario(1, "Jonnayker", "Quintero", "1002", "jhon", "123", 19);
+        d_usuario[1] = new usuario(2, "Jonnaeweweyker", "Quintero", "1002", "jhon", "123", 19);
+        d_usuario[2] = new usuario(3, "Jodssdnnayker", "Quintero", "1002", "jhon", "123", 19);
+
+        usuario[] u = {
+            new usuario(1, "Jonnayker", "Quintero", "1002", "jhon", "123", 19),
+            new usuario(1, "Jonnayker", "Quintero", "1002", "jhon", "123", 19),
+            new usuario(1, "Jonnayker", "Quintero", "1002", "jhon", "123", 19),
+            new usuario(1, "Jonnayker", "Quintero", "1002", "jhon", "123", 19),
+            new usuario(1, "Jonnayker", "Quintero", "1002", "jhon", "123", 19)
+        };
+
+        // Guardar el retorno de la función
+        Object[] resultado = agregarUsuario(u, new usuario(1, "Jonnayker", "Quintero", "1002", "jhon", "123", 19));
+    }
+} // Llave de cierre de la clase agregada
+
+```
+
+> **Nota:** el método `agregarUsuario` crea un arreglo nuevo de tamaño `old.length + 1`, copia los elementos anteriores y agrega el nuevo usuario al final — es una forma manual de "hacer crecer" un arreglo de tamaño fijo en Java (ya que los arrays no son redimensionables).
+
+---
+
+## 📝 Notas — Estructura del proyecto
+
+```
+Pedidos_S2 [feature/gestionar_prestamos]
+└── Source Packages
+    ├── com.s2.cadenas_conversion
+    │   └── main.java 
+    ├── controlador
+    │   └── gestion_menus.java 
+    ├── modelo
+    │   ├── Usuario.java 
+    │   └── example.java
+    └── vista
+        └── menu_principal.java
+```
+
+---
+
+## 📚 Terminología
+
+| Término | Descripción breve |
+|---|---|
+| **Clase** | Plantilla o molde que define los atributos y métodos de un objeto. |
+| **Objeto** | Instancia concreta de una clase, creada con `new`. |
+| **Atributo** | Variable que almacena el estado o características de un objeto (ej. `nombre`, `edad`). |
+| **Método** | Función definida dentro de una clase que representa un comportamiento del objeto. |
+| **Constructor** | Método especial usado para inicializar los atributos de un objeto al crearlo con `new`. |
+| **Getter / Setter** | Métodos públicos usados para leer (`get`) o modificar (`set`) atributos privados de forma controlada. |
+| **Encapsulamiento** | Ocultar los atributos internos de una clase y exponer solo lo necesario mediante métodos públicos. |
+| **Herencia** | Mecanismo que permite a una clase (subclase) adquirir atributos y métodos de otra clase (superclase). |
+| **Polimorfismo** | Capacidad de un objeto de tomar distintas formas o comportamientos según el contexto. |
+| **Abstracción** | Representar solo las características esenciales de un objeto, ocultando los detalles de implementación. |
+| **Paquete (package)** | Agrupación de clases relacionadas, usada para organizar el código y controlar el acceso. |
+| **Modificador de acceso** | Palabra clave (`public`, `private`, `protected`, default) que define desde dónde se puede acceder a un miembro de una clase. |
