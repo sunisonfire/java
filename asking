@@ -1,0 +1,120 @@
+# Pedidos_S2 — Correcciones realizadas
+
+Este documento resume los errores encontrados en el proyecto, cómo se corrigieron,
+preguntas sugeridas para profundizar el tema con el profesor, y una explicación
+detallada del bug más importante (el bucle infinito en `validar_decimal`).
+
+---
+
+## Resumen de errores y cambios
+
+### 1. Bucle infinito en `validar_decimal` (`validaciones.java`)
+- **Error**: cuando el usuario ingresaba algo que no era decimal, el `while`
+  imprimía "Error..." pero nunca "limpiaba" ese dato inválido del `Scanner`,
+  así que volvía a leer lo mismo para siempre.
+- **Cambio**: se agregó `x.next()` dentro del `while`, para descartar el
+  token inválido antes de volver a preguntar (igual que ya hacía
+  `validar_entero`).
+
+### 2. Crash con Enter vacío en menús (`validaciones.java`)
+- **Error**: `validar_entero_menu("")` devolvía `true` con un string vacío
+  (porque el `for` nunca se ejecutaba), y luego `Integer.parseInt("")`
+  lanzaba una excepción y tumbaba el programa.
+- **Cambio**: se agregó una validación explícita `if (op.isEmpty()) return false;`
+  al inicio del método.
+
+### 3. `validar_texto` rechazaba espacios (`validaciones.java`)
+- **Error**: `Character.isLetter()` no acepta espacios, así que nombres
+  compuestos como "Juan Carlos" se rechazaban como inválidos.
+- **Cambio**: se agregó la condición `&& texto.charAt(i) != ' '` para aceptar
+  también espacios.
+
+### 4. Intento de arreglo en `dato_eliminar` — revertido (`ingreso_datos.java`)
+- **Lo que parecía un error**: que no se validaba el rango de la "posición a
+  eliminar", arriesgando un `ArrayIndexOutOfBoundsException`.
+- **Por qué era falsa alarma**: al revisar el controlador se descubrió que
+  `dato_eliminar()` en realidad captura un **ID de usuario**, no un índice de
+  arreglo — y el controlador ya valida con `users.buscar(id_eliminar) != null`
+  si ese ID existe. Se revirtió el cambio y solo se mejoró el mensaje
+  ("Ingrese el ID del usuario a eliminar" en vez de "posición") para mayor
+  claridad.
+
+### 5. Typo en mensaje de error (`gestion_menus.java`)
+- **Error**: `"No existe dicho id a eliminar!f"` tenía una `f` suelta al final.
+- **Cambio**: se quitó la `f` sobrante.
+
+---
+
+## Preguntas para el profesor
+
+1. **Sobre `Scanner` y buffers**: ¿Por qué `hasNextInt()` / `hasNextDouble()`
+   en un `while` sin consumir el token inválido (`x.next()`) causa un bucle
+   infinito? ¿Qué está pasando internamente en el buffer del `Scanner`?
+
+2. **Sobre múltiples Scanners**: ¿Es buena práctica crear un
+   `new Scanner(System.in)` en cada método, como hace esta clase, o debería
+   haber un único `Scanner` compartido en todo el programa? ¿Qué problemas
+   puede traer tener varios?
+
+3. **Sobre validación de casos límite**: ¿Cómo puedo identificar
+   sistemáticamente los "casos borde" (string vacío, solo espacios, valores
+   fuera de rango) al momento de escribir un validador, en vez de
+   descubrirlos después con errores en producción?
+
+4. **Sobre diseño de nombres/parámetros**: En `dato_eliminar()`, el mensaje
+   decía "posición" pero en realidad se refiere a un ID de usuario que se
+   busca, no un índice de arreglo. ¿Qué tan importante es que los nombres de
+   variables y mensajes reflejen exactamente el concepto de dominio (ID vs.
+   posición/índice), y cómo afecta esto la mantenibilidad del código?
+
+5. **Sobre separación de responsabilidades (MVC)**: En este proyecto, la
+   clase `validaciones` está en el paquete `vista` y hace
+   `System.out.println` + `Scanner.nextLine()` a la vez que valida. ¿Es
+   correcto que la validación esté mezclada con la entrada/salida de
+   consola, o debería separarse en capas distintas?
+
+---
+
+## Explicación: ¿por qué `hasNextDouble()` sin `x.next()` causa un bucle infinito?
+
+### Cómo funciona `hasNextInt()` / `hasNextDouble()`
+
+Cuando el usuario escribe algo en la consola y presiona Enter, ese texto no
+desaparece automáticamente — el `Scanner` lo guarda temporalmente en una
+especie de "cajita de espera" (el buffer). `hasNextDouble()` simplemente
+**mira** lo que hay en esa cajita y pregunta: *"¿esto que está ahí parece un
+número decimal?"* — pero **no lo saca de la cajita**, solo lo observa.
+
+### El problema
+
+Imagina que el usuario escribe `"hola"` cuando le pedías un decimal:
+
+1. `"hola"` entra al buffer (la cajita de espera).
+2. `hasNextDouble()` mira la cajita: *"¿'hola' es un decimal? No."* → devuelve `false`.
+3. Como era `false`, entra al `while` y se imprime "Error, se espera un valor decimal".
+4. El `while` vuelve a preguntar: `hasNextDouble()` mira la cajita otra vez...
+   y **`"hola"` sigue ahí**, porque nadie lo sacó.
+5. Entonces vuelve a decir `false`, se imprime el error otra vez, y así
+   **para siempre**. El programa queda atrapado imprimiendo el mismo mensaje
+   sin parar, porque nunca le dio oportunidad al usuario de escribir algo
+   nuevo.
+
+### La solución: `x.next()`
+
+`x.next()` sí **saca** algo de la cajita (lee y descarta una "palabra").
+Entonces, dentro del `while`, cuando detectamos que lo que hay en el buffer
+no sirve, usamos `x.next()` para **botar esa basura** y dejar la cajita
+libre. Recién ahí, en la siguiente vuelta del bucle, `hasNextDouble()` puede
+mirar algo nuevo — porque ahora el `Scanner` sí espera a que el usuario
+escriba de nuevo.
+
+### Analogía simple
+
+Es como si tuvieras una bandeja de entrada de correo:
+
+- `hasNextInt()` es como **leer el asunto del correo sin abrirlo** para ver
+  si parece relevante.
+- Si no es relevante, tienes que **moverlo a la papelera** (`x.next()`) para
+  que no siga apareciendo como "el próximo correo a revisar".
+- Si nunca lo mueves a la papelera, cada vez que revisas tu bandeja, sigues
+  viendo el mismo correo inútil una y otra vez.
