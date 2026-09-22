@@ -1,0 +1,939 @@
+# Apuntes de Java — Clase 12: PATRONES
+
+# Factory Method — Sistema de Notificaciones
+
+Ejemplo práctico del patrón de diseño **Factory Method** aplicado a un sistema de envío de notificaciones (WhatsApp / Email) en Java.
+
+## 📖 ¿Qué es el Factory Method?
+
+Es un patrón de diseño **creacional** que delega la creación de objetos a un método especializado ("fábrica"), en lugar de usar `new` directamente en el código cliente. Su objetivo es **desacoplar** el código que usa un objeto del código que decide qué clase concreta instanciar.
+
+En vez de escribir:
+```java
+Notificacion n = new WhatsApp();
+```
+
+El cliente delega la decisión a una fábrica:
+```java
+Notificacion n = NotificacionFactory.crear("whatsapp");
+```
+
+## 🧩 Estructura del proyecto
+
+| Archivo | Rol en el patrón | Qué hace |
+|---|---|---|
+| `Notificacion` | **Producto abstracto** | Interfaz que define el contrato: todo tipo de notificación debe implementar `enviar()` |
+| `WhatsApp` | **Producto concreto A** | Implementación de `enviar()` que simula un envío por WhatsApp |
+| `EmailNotificacion` | **Producto concreto B** | Implementación de `enviar()` que simula un envío por Email |
+| `NotificacionFactory` | **La fábrica** | Método estático `crear(String tipo)` que decide qué producto concreto instanciar |
+| `MethodFactoryS2` (main) | **El cliente** | Pide datos al usuario y usa la notificación sin saber qué clase concreta es |
+
+## 💻 Código
+
+### `Notificacion.java` — el contrato
+
+```java
+public interface Notificacion {
+    void enviar(String destino, String mensaje);
+}
+```
+
+### `WhatsApp.java` — producto concreto
+
+```java
+public class WhatsApp implements Notificacion {
+    @Override
+    public void enviar(String destino, String mensaje) {
+        System.out.println("""
+                Enviado por WhatsApp:
+                Hola, %s,
+                %s
+                """.formatted(destino, mensaje));
+    }
+}
+```
+
+### `EmailNotificacion.java` — producto concreto
+
+```java
+public class EmailNotificacion implements Notificacion {
+    @Override
+    public void enviar(String destino, String mensaje) {
+        System.out.println("""
+                Enviado por Email:
+                Para: %s
+                Asunto: Nueva notificación
+
+                %s
+                """.formatted(destino, mensaje));
+    }
+}
+```
+
+### `NotificacionFactory.java` — la fábrica
+
+```java
+public class NotificacionFactory {
+    public static Notificacion crear(String tipo) {
+        return tipo.toLowerCase().equals("whatsapp") ? new WhatsApp()
+                : tipo.toLowerCase().equals("email") ? new EmailNotificacion() : null;
+    }
+}
+```
+
+### `MethodFactoryS2.java` — el cliente
+
+```java
+public class MethodFactoryS2 {
+    public static void main(String[] args) {
+        System.out.println("Hola, ingresa la información a enviar");
+        String mensaje = new Scanner(System.in).nextLine();
+
+        System.out.println("Ingresa el destino");
+        String destinatario = new Scanner(System.in).nextLine();
+
+        System.out.println("Seleccione el tipo de mensajería:\nEmail\nWhatsApp");
+        String tipoMensajeria = new Scanner(System.in).nextLine();
+
+        Notificacion envio = NotificacionFactory.crear(tipoMensajeria);
+        envio.enviar(destinatario, mensaje);
+    }
+}
+```
+
+## 🚀 Cómo funciona — paso a paso
+
+**1. Arranca el programa**
+Java empieza a ejecutar `main()`. Todavía no existe ningún objeto `Notificacion`.
+
+**2. Se piden datos al usuario**
+```java
+String mensaje = new Scanner(System.in).nextLine();       // ej: "Hola, ¿cómo estás?"
+String destinatario = new Scanner(System.in).nextLine();  // ej: "juan@correo.com"
+String tipoMensajeria = new Scanner(System.in).nextLine(); // ej: "whatsapp"
+```
+Solo se recolecta información. Aún no interviene el patrón.
+
+**3. Se invoca la fábrica**
+```java
+Notificacion envio = NotificacionFactory.crear(tipoMensajeria);
+```
+- El **tipo declarado** de `envio` es `Notificacion` (la interfaz, el molde abstracto).
+- El **valor real** dependerá de lo que decida la fábrica.
+- `main` le entrega el control a `NotificacionFactory.crear()`, pasándole el string recibido.
+
+**4. La fábrica decide qué crear**
+
+Con `tipo = "whatsapp"`:
+1. `tipo.toLowerCase()` → `"whatsapp"`
+2. `.equals("whatsapp")` → `true`
+3. Se ejecuta `new WhatsApp()`
+4. Se crea el objeto `WhatsApp` en memoria
+5. Se devuelve al `main`, pero "disfrazado" como `Notificacion` (upcasting)
+
+**5. El objeto vuelve al cliente**
+
+`envio` ahora apunta a un objeto `WhatsApp` real, pero **`main` no lo sabe ni le importa** — solo ve una `Notificacion` genérica.
+
+**6. Se usa el objeto a través del contrato**
+```java
+envio.enviar(destinatario, mensaje);
+```
+Aquí ocurre el **polimorfismo**: aunque `envio` está "etiquetado" como `Notificacion`, Java sabe en tiempo de ejecución que el objeto real es un `WhatsApp`, así que ejecuta el `enviar()` de esa clase.
+
+### Diagrama del flujo
+
+```
+main()
+  │
+  │ 1. Recolecta datos (mensaje, destinatario, tipo)
+  ▼
+NotificacionFactory.crear("whatsapp")
+  │
+  │ 2. Evalúa el String recibido
+  │ 3. Decide: "whatsapp" → new WhatsApp()
+  ▼
+Devuelve un objeto WhatsApp,
+pero como tipo Notificacion
+  │
+  ▼
+main() recibe "envio"
+  │
+  │ 4. Llama a envio.enviar(...)
+  │    sin saber que es un WhatsApp
+  ▼
+Java ejecuta el enviar() real:
+el de la clase WhatsApp
+  │
+  ▼
+Se imprime el mensaje
+```
+
+### ¿Y si el usuario escribe "email" en vez de "whatsapp"?
+
+Exactamente el mismo flujo, pero:
+- La condición `"whatsapp"` es `false`.
+- Se evalúa `"email".equals("email")` → `true`.
+- Se crea `new EmailNotificacion()` en su lugar.
+- **`main` no cambia ni una línea de código** — sigue llamando `envio.enviar(...)` igual.
+
+## 💡 La idea central
+
+> El cliente (`main`) **nunca** decide ni conoce la clase concreta. Solo le pide a la fábrica "dame algo que sepa `enviar()`", y la fábrica es la única responsable de traducir un `String` en un objeto real.
+
+## ✅ Ventajas del patrón en este proyecto
+
+- **Desacoplamiento**: `main` solo conoce la interfaz `Notificacion`, nunca las clases concretas.
+- **Extensibilidad**: agregar un nuevo canal (ej. SMS) no requiere modificar `main`.
+- **Centralización**: toda la lógica de decisión vive en un solo lugar, `NotificacionFactory`.
+- **Cumple el principio abierto/cerrado (OCP)**: el sistema está abierto a extensión, cerrado a modificación.
+
+## 🔧 Cómo extenderlo (ejemplo: agregar SMS)
+
+1. Crear la clase `SMSNotificacion implements Notificacion` con su propia implementación de `enviar()`.
+2. Agregar un caso más en `NotificacionFactory`:
+   ```java
+   public static Notificacion crear(String tipo) {
+       return switch (tipo.toLowerCase()) {
+           case "whatsapp" -> new WhatsApp();
+           case "email" -> new EmailNotificacion();
+           case "sms" -> new SMSNotificacion();
+           default -> throw new IllegalArgumentException("Tipo desconocido: " + tipo);
+       };
+   }
+   ```
+3. **`main` sigue exactamente igual** — no se entera del cambio.
+
+## ⚠️ Nota / mejora pendiente
+
+La implementación actual de `NotificacionFactory` devuelve `null` si el usuario escribe un tipo no reconocido (algo distinto a `"whatsapp"` o `"email"`), lo que provocaría un `NullPointerException` al llamar `envio.enviar(...)`. Una mejora sería lanzar una excepción explícita, por ejemplo `IllegalArgumentException`, para detectar errores de entrada de forma más clara (como se muestra en el ejemplo de extensión con `switch` de arriba).
+
+# Abstract Factory — Sistema de Facturación por País
+
+Ejemplo práctico del patrón de diseño **Abstract Factory** (Fábrica Abstracta) aplicado a un sistema de facturación y reportes que varía según el país (Colombia / USA) en Java.
+
+## 📖 ¿Qué es el Abstract Factory?
+
+Es un patrón de diseño **creacional** que permite crear **familias de objetos relacionados** sin especificar sus clases concretas. A diferencia del **Factory Method** (que crea un solo tipo de producto), el Abstract Factory garantiza que **varios productos relacionados** se creen de forma coherente entre sí.
+
+### Factory Method vs. Abstract Factory
+
+| | **Factory Method** | **Abstract Factory** |
+|---|---|---|
+| Qué crea | Un solo tipo de producto | Una familia de productos relacionados |
+| Cuántas interfaces de producto hay | 1 | 2 o más |
+| Métodos en la fábrica | 1 (`crear()`) | Varios (`crearFactura()`, `crearReporte()`, etc.) |
+| Garantiza | La implementación correcta de un producto | Un conjunto completo y coherente de productos que combinan entre sí |
+
+En este proyecto, cada país necesita **dos productos relacionados**: una `Factura` (con sus propias reglas de impuestos) y un `Reporte` (para visualizar esa facturación). El Abstract Factory asegura que **nunca se mezclen** productos de países distintos (por ejemplo, jamás obtendrías una `FacturaUSA` combinada con un `ReporteColombia`).
+
+## 🧩 Estructura del proyecto
+
+| Archivo | Rol en el patrón | Qué hace |
+|---|---|---|
+| `Factura` | **Producto abstracto A** | Interfaz que define el contrato `generar(double total)` |
+| `Reporte` | **Producto abstracto B** | Interfaz que define el contrato `visualizar()` |
+| `FacturaUSA` / `FacturaColombia` | **Productos concretos A** | Implementan `Factura` con reglas propias de cada país |
+| `ReporteUSA` / `ReporteColombia` | **Productos concretos B** | Implementan `Reporte` con formato propio de cada país |
+| `PaisFactory` | **Fábrica abstracta** | Interfaz que declara `crearFactura()` y `crearReporte()` |
+| `USAFactory` / `ColombiaFactory` | **Fábricas concretas** | Cada una crea la familia completa de productos de su país |
+| `MethodAbstractFactoryS2` (main) | **El cliente** | Pide el país al usuario y usa los productos sin saber la clase concreta |
+
+## 💻 Código completo
+
+### `Factura.java` — producto abstracto A
+
+```java
+package com.s2.methodabstractfactorys2.contratos;
+
+public interface Factura {
+    void generar(double total);
+}
+```
+
+### `Reporte.java` — producto abstracto B
+
+```java
+package com.s2.methodabstractfactorys2.contratos;
+
+public interface Reporte {
+    void visualizar();
+}
+```
+
+### `PaisFactory.java` — la fábrica abstracta
+
+```java
+package com.s2.methodabstractfactorys2.factory;
+
+import com.s2.methodabstractfactorys2.contratos.Factura;
+import com.s2.methodabstractfactorys2.contratos.Reporte;
+
+public interface PaisFactory {
+    Factura crearFactura();
+    Reporte crearReporte();
+}
+```
+
+### `FacturaUSA.java` — producto concreto A (USA)
+
+```java
+package com.s2.methodabstractfactorys2.implcontratos;
+
+import com.s2.methodabstractfactorys2.contratos.Factura;
+
+public class FacturaUSA implements Factura {
+
+    @Override
+    public void generar(double total) {
+        double tax = total * 0.10;
+        System.out.println("---INVOICE USA---");
+        System.out.println("Subtotal: $" + total);
+        System.out.println("Tax 10%:   $" + tax);
+    }
+}
+```
+
+### `ReporteUSA.java` — producto concreto B (USA)
+
+```java
+package com.s2.methodabstractfactorys2.implcontratos;
+
+import com.s2.methodabstractfactorys2.contratos.Reporte;
+
+public class ReporteUSA implements Reporte {
+
+    @Override
+    public void visualizar() {
+        System.out.println("Visualizando reporte");
+    }
+}
+```
+
+### `USAFactory.java` — fábrica concreta (USA)
+
+```java
+package com.s2.methodabstractfactorys2.factory;
+
+import com.s2.methodabstractfactorys2.implcontratos.FacturaUSA;
+import com.s2.methodabstractfactorys2.implcontratos.ReporteUSA;
+import com.s2.methodabstractfactorys2.contratos.Factura;
+import com.s2.methodabstractfactorys2.contratos.Reporte;
+
+public class USAFactory implements PaisFactory {
+
+    @Override
+    public Factura crearFactura() {
+        return new FacturaUSA();
+    }
+
+    @Override
+    public Reporte crearReporte() {
+        return new ReporteUSA();
+    }
+}
+```
+
+### `FacturaColombia.java` — producto concreto A (Colombia)
+
+```java
+package com.s2.methodabstractfactorys2.implcontratos;
+
+import com.s2.methodabstractfactorys2.contratos.Factura;
+
+public class FacturaColombia implements Factura {
+
+    @Override
+    public void generar(double total) {
+        double iva = total * 0.19; // IVA Colombia
+        System.out.println("---FACTURA COLOMBIA---");
+        System.out.println("Subtotal: $" + total);
+        System.out.println("IVA 19%:  $" + iva);
+    }
+}
+```
+
+### `ReporteColombia.java` — producto concreto B (Colombia)
+
+```java
+package com.s2.methodabstractfactorys2.implcontratos;
+
+import com.s2.methodabstractfactorys2.contratos.Reporte;
+
+public class ReporteColombia implements Reporte {
+
+    @Override
+    public void visualizar() {
+        System.out.println("Visualizando reporte");
+    }
+}
+```
+
+### `ColombiaFactory.java` — fábrica concreta (Colombia)
+
+```java
+package com.s2.methodabstractfactorys2.factory;
+
+import com.s2.methodabstractfactorys2.implcontratos.FacturaColombia;
+import com.s2.methodabstractfactorys2.implcontratos.ReporteColombia;
+import com.s2.methodabstractfactorys2.contratos.Factura;
+import com.s2.methodabstractfactorys2.contratos.Reporte;
+
+public class ColombiaFactory implements PaisFactory {
+
+    @Override
+    public Factura crearFactura() {
+        return new FacturaColombia();
+    }
+
+    @Override
+    public Reporte crearReporte() {
+        return new ReporteColombia();
+    }
+}
+```
+
+### `MethodAbstractFactoryS2.java` — el cliente (main)
+
+```java
+package com.s2.methodabstractfactorys2;
+
+import java.util.Scanner;
+import com.s2.methodabstractfactorys2.factory.PaisFactory;
+import com.s2.methodabstractfactorys2.factory.USAFactory;
+import com.s2.methodabstractfactorys2.factory.ColombiaFactory;
+import com.s2.methodabstractfactorys2.contratos.Factura;
+import com.s2.methodabstractfactorys2.contratos.Reporte;
+
+public class MethodAbstractFactoryS2 {
+    public static void main(String[] args) {
+        Scanner x = new Scanner(System.in);
+        System.out.println("Pais (Colombia/USA):");
+        String pais = x.nextLine();
+
+        System.out.println("Monto venta: ");
+        double monto = x.nextDouble();
+
+        PaisFactory factory;
+        if (pais.equalsIgnoreCase("Colombia")) {
+            factory = new ColombiaFactory();
+        } else {
+            factory = new USAFactory();
+        }
+
+        Factura f = factory.crearFactura();
+        Reporte r = factory.crearReporte();
+        f.generar(monto);
+        r.visualizar();
+    }
+}
+```
+
+## 🚀 Cómo funciona — paso a paso (con `pais = "Colombia"`)
+
+**1. Arranca el programa y se piden datos**
+```java
+Scanner x = new Scanner(System.in);
+String pais = x.nextLine();     // "Colombia"
+double monto = x.nextDouble();  // 500.0
+```
+
+**2. Se decide qué fábrica concreta usar**
+```java
+PaisFactory factory;
+if (pais.equalsIgnoreCase("Colombia")) {
+    factory = new ColombiaFactory();
+} else {
+    factory = new USAFactory();
+}
+```
+- El **tipo declarado** de `factory` es `PaisFactory` (la interfaz, el molde abstracto).
+- Como `pais` es `"Colombia"`, se crea un objeto real `ColombiaFactory`, pero "disfrazado" como `PaisFactory` (upcasting).
+
+**3. Se piden los dos productos a la fábrica**
+```java
+Factura f = factory.crearFactura();
+Reporte r = factory.crearReporte();
+```
+- `factory.crearFactura()` ejecuta el método de `ColombiaFactory`, que devuelve `new FacturaColombia()`.
+- `factory.crearReporte()` ejecuta el método de `ColombiaFactory`, que devuelve `new ReporteColombia()`.
+- `main` recibe ambos objetos **como sus interfaces** (`Factura` y `Reporte`), sin saber cuáles son las clases concretas.
+
+**4. Se usan los productos a través de sus contratos**
+```java
+f.generar(monto);   // ejecuta la lógica de FacturaColombia (IVA 19%)
+r.visualizar();      // ejecuta la lógica de ReporteColombia
+```
+Aquí ocurre el **polimorfismo**: aunque `f` y `r` están "etiquetados" con las interfaces, Java ejecuta en tiempo de ejecución los métodos reales de `FacturaColombia` y `ReporteColombia`.
+
+### Diagrama del flujo
+
+```
+main()
+  │
+  │ 1. Pide país y monto
+  ▼
+if (pais == "Colombia") → factory = new ColombiaFactory()
+else                     → factory = new USAFactory()
+  │
+  │ factory queda "etiquetada" como PaisFactory
+  ▼
+factory.crearFactura() ──► FacturaColombia (o FacturaUSA)
+factory.crearReporte() ──► ReporteColombia (o ReporteUSA)
+  │
+  │ f y r quedan "etiquetados" como Factura / Reporte
+  ▼
+f.generar(monto)   → lógica de impuestos del país elegido
+r.visualizar()     → formato de reporte del país elegido
+```
+
+### ¿Y si el usuario escribe "USA"?
+
+Exactamente el mismo flujo, pero:
+- El `if` es `false` → `factory = new USAFactory()`.
+- `factory.crearFactura()` devuelve `new FacturaUSA()` (tax 10%).
+- `factory.crearReporte()` devuelve `new ReporteUSA()`.
+- **El resto del código no cambia ni una línea** — sigue llamando `f.generar(monto)` y `r.visualizar()` igual.
+
+## 💡 La idea central
+
+> El cliente (`main`) elige **una sola fábrica concreta**, y esa fábrica le garantiza que **todos los productos que obtenga a partir de ella pertenecen a la misma familia y son coherentes entre sí**. Nunca puede terminar mezclando, por accidente, una `FacturaUSA` con un `ReporteColombia`.
+
+## ✅ Ventajas del patrón en este proyecto
+
+- **Coherencia garantizada**: todos los productos creados por una misma fábrica pertenecen a la misma familia (mismo país).
+- **Desacoplamiento**: `main` solo conoce las interfaces `PaisFactory`, `Factura` y `Reporte`, nunca las clases concretas.
+- **Extensibilidad**: agregar un nuevo país (ej. México) no requiere modificar la lógica de `main` que usa los productos, solo la parte que elige la fábrica.
+- **Cumple el principio abierto/cerrado (OCP)**: el sistema está abierto a extensión (nuevas fábricas/países), cerrado a modificación del código cliente.
+
+## 🔧 Cómo extenderlo (ejemplo: agregar México)
+
+1. Crear `FacturaMexico implements Factura` y `ReporteMexico implements Reporte`, cada una con sus propias reglas (ej. IVA 16%).
+2. Crear `MexicoFactory implements PaisFactory` que devuelva ambos productos:
+   ```java
+   public class MexicoFactory implements PaisFactory {
+       @Override
+       public Factura crearFactura() {
+           return new FacturaMexico();
+       }
+
+       @Override
+       public Reporte crearReporte() {
+           return new ReporteMexico();
+       }
+   }
+   ```
+3. Agregar el caso en la selección de fábrica (idealmente con un `switch` en vez de `if/else` anidados):
+   ```java
+   PaisFactory factory = switch (pais.toLowerCase()) {
+       case "colombia" -> new ColombiaFactory();
+       case "mexico" -> new MexicoFactory();
+       case "usa" -> new USAFactory();
+       default -> throw new IllegalArgumentException("País no soportado: " + pais);
+   };
+   ```
+4. El resto del `main` (`crearFactura()`, `crearReporte()`, `f.generar(monto)`, `r.visualizar()`) **no cambia**.
+
+## ⚠️ Nota / mejora pendiente
+
+El `if/else` actual asume que cualquier país distinto de `"Colombia"` es `"USA"`, lo cual es frágil: si el usuario escribe algo mal (ej. `"Usaa"`), el programa seguirá adelante usando `USAFactory` silenciosamente en vez de avisar del error. Es más robusto usar un `switch` con un caso `default` que lance una excepción explícita, como se muestra en la sección de extensión arriba.
+
+
+# Patrón Builder – Ejemplo `Usuario`
+
+Implementación del patrón de diseño **Builder**, que permite construir objetos complejos paso a paso, separando la lógica de construcción de la representación final del objeto.
+
+## 📁 Estructura del proyecto
+
+```
+com.s2.builders2
+├── Usuario.java
+├── UsuarioBuilder.java
+└── BuilderS2.java
+```
+
+---
+
+## Código
+
+### `Usuario.java`
+
+Clase que representa los datos del objeto final. No contiene lógica de construcción, solo los atributos.
+
+```java
+package com.s2.builders2;
+
+public class Usuario {
+    long id;
+    String nombre;
+    String documento;
+    String direccion;
+    String username;
+    String password;
+    String email;
+}
+```
+
+### `UsuarioBuilder.java`
+
+Clase encargada de construir el objeto `Usuario` paso a paso mediante métodos encadenados.
+
+```java
+package com.s2.builders2;
+
+public class UsuarioBuilder {
+
+    Usuario u = new Usuario();
+
+    public UsuarioBuilder id(long id) {
+        u.id = id;
+        return this;
+    }
+
+    public UsuarioBuilder nombre(String nombre) {
+        u.nombre = nombre;
+        return this;
+    }
+
+    public UsuarioBuilder documento(String documento) {
+        u.documento = documento;
+        return this;
+    }
+
+    public UsuarioBuilder direccion(String direccion) {
+        u.direccion = direccion;
+        return this;
+    }
+
+    public UsuarioBuilder username(String username) {
+        u.username = username;
+        return this;
+    }
+
+    public UsuarioBuilder password(String password) {
+        u.password = password;
+        return this;
+    }
+
+    public UsuarioBuilder email(String email) {
+        u.email = email;
+        return this;
+    }
+
+    public Usuario build() {
+        return u;
+    }
+}
+```
+
+### `BuilderS2.java`
+
+Clase principal donde se usa el builder para construir un objeto `Usuario`.
+
+```java
+package com.s2.builders2;
+
+public class BuilderS2 {
+
+    public static void main(String[] args) {
+        Usuario u = new UsuarioBuilder()
+                .id(1)
+                .nombre("David")
+                .direccion("Carrera 27")
+                .email("contacto.david.dm@gmail.com")
+                .password("123")
+                .username("david999")
+                .documento("1003")
+                .build();
+        System.out.println("Usuario creado correctamente!");
+    }
+}
+```
+
+---
+
+## 🧩 ¿Cómo funciona el patrón?
+
+### 1. Separación de responsabilidades
+
+`Usuario` solo guarda los datos; no sabe nada sobre cómo se construye a sí misma. Toda la lógica de "cómo armar un Usuario paso a paso" vive en `UsuarioBuilder`. Eso es justamente la esencia del patrón: separar la construcción de un objeto complejo de su representación final.
+
+### 2. El truco de `return this`
+
+Cada método (`id`, `nombre`, `direccion`, etc.) modifica el `Usuario` interno del builder y luego devuelve `this` (el propio builder). Eso es lo que permite encadenar llamadas:
+
+```java
+new UsuarioBuilder().id(1).nombre("David")...
+```
+
+Sin ese `return this`, cada método devolvería `void` y habría que escribir:
+
+```java
+UsuarioBuilder b = new UsuarioBuilder();
+b.id(1);
+b.nombre("David");
+b.direccion("Carrera 27");
+// ...
+```
+
+Funcionalmente es lo mismo, pero mucho más verboso.
+
+### 3. `build()` entrega el resultado
+
+Al final se llama `.build()`, que simplemente retorna el `Usuario` ya armado. Ese es el punto donde se "termina" la construcción y se obtiene el objeto listo para usar.
+
+### 4. Ventajas frente a un constructor tradicional
+
+- Evita constructores con muchos parámetros donde es fácil confundir el orden (`new Usuario(1, "David", "1003", "Carrera 27", ...)` es propenso a errores).
+- Permite construir el objeto de forma legible, nombrando cada campo.
+- Permite omitir campos opcionales sin necesitar constructores sobrecargados para cada combinación.
+- El objeto `Usuario` puede quedar inmutable si luego se cambian sus campos a `final` y se usa un constructor privado que reciba el builder.
+
+---
+
+## ⚠️ Nota sobre visibilidad
+
+En este código, los campos de `Usuario` tienen visibilidad *package-private* (sin modificador de acceso), lo cual funciona porque `UsuarioBuilder` está en el mismo paquete (`com.s2.builders2`). Si en algún momento se separan en paquetes distintos, sería necesario declarar los campos como `private` y usar setters, o pasar los valores mediante un constructor interno que reciba el builder.
+
+# Patrón Prototype – Ejemplo `Producto`
+
+Implementación del patrón de diseño **Prototype**, que permite crear nuevos objetos **clonando** una instancia existente en lugar de construirlos desde cero.
+
+## 📁 Estructura del proyecto
+
+```
+com.s2.prototypes2
+├── Producto.java
+└── PrototypeS2.java
+```
+
+---
+
+## Código
+
+### `Producto.java`
+
+Clase que implementa `Cloneable` y expone un método `clonar()` para crear copias de sí misma.
+
+```java
+package com.s2.prototypes2;
+
+public class Producto implements Cloneable {
+
+    public Producto clonar() {
+        try {
+            return (Producto) super.clone();
+        } catch (CloneNotSupportedException e) {
+        }
+        return null;
+    }
+
+    private int id;
+    private String nombre;
+    private String marca;
+
+    public Producto(int id, String nombre, String marca) {
+        this.id = id;
+        this.nombre = nombre;
+        this.marca = marca;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
+    }
+
+    public String getMarca() {
+        return marca;
+    }
+
+    public void setMarca(String marca) {
+        this.marca = marca;
+    }
+}
+```
+
+> **Nota:** los métodos `getNombre`/`setNombre` y `getMarca`/`setMarca` se completaron siguiendo el mismo patrón que `getId`/`setId`, ya que la captura de pantalla original se corta después de ese punto. Si tu clase tiene algo distinto, avísame para ajustarlo.
+
+### `PrototypeS2.java`
+
+Clase principal donde se usa el método `clonar()` para generar una copia de un objeto existente.
+
+```java
+package com.s2.prototypes2;
+
+public class PrototypeS2 {
+
+    public static void main(String[] args) {
+        Producto p1 = new Producto(1, "Pera", "Fruta");
+        Producto p2 = p1.clonar();
+        p2.setNombre("Piña");
+        System.out.println(p1.getNombre());
+        System.out.println(p2.getNombre());
+    }
+}
+```
+
+**Salida esperada:**
+```
+Pera
+Piña
+```
+
+---
+
+## 🧩 ¿Cómo funciona el patrón?
+
+### 1. La idea central
+
+En lugar de crear un objeto nuevo desde cero (con `new` y pasando todos los parámetros), el patrón Prototype **clona** un objeto ya existente. Es útil cuando crear un objeto desde cero es costoso, o cuando se quiere partir de una configuración base y solo cambiar algunos atributos.
+
+### 2. `implements Cloneable`
+
+`Cloneable` es una interfaz "marcadora" (no tiene métodos) que le indica a la JVM que esta clase permite ser clonada mediante `Object.clone()`. Si no se implementa y se llama a `clone()`, Java lanza `CloneNotSupportedException`.
+
+### 3. El método `clonar()`
+
+```java
+public Producto clonar(){
+    try{
+        return (Producto) super.clone();
+    }catch(CloneNotSupportedException e){
+    }
+    return null;
+}
+```
+
+- `super.clone()` llama al método `clone()` heredado de `Object`, que crea una copia **campo por campo** del objeto actual (esto se llama *shallow copy* o copia superficial).
+- Como `Object.clone()` devuelve tipo `Object`, se hace un *cast* a `Producto`.
+- Se envuelve en un `try/catch` porque `clone()` está declarado para lanzar `CloneNotSupportedException` — aunque en este caso nunca ocurrirá, porque la clase sí implementa `Cloneable`.
+
+### 4. En el `main`
+
+```java
+Producto p1 = new Producto(1, "Pera", "Fruta");
+Producto p2 = p1.clonar();
+p2.setNombre("Piña");
+```
+
+- `p1` se crea normalmente con `new`.
+- `p2` se crea **clonando** a `p1`, no con `new Producto(...)`. Internamente, `p2` empieza siendo una copia exacta de `p1` (mismo id, mismo nombre, misma marca), pero es un **objeto distinto en memoria**.
+- Al hacer `p2.setNombre("Piña")`, solo se modifica `p2`. `p1` no se ve afectado, por eso el `println` de `p1.getNombre()` sigue mostrando `"Pera"` y el de `p2.getNombre()` muestra `"Piña"`.
+
+### 5. Shallow copy vs Deep copy (algo importante a tener en cuenta)
+
+`super.clone()` hace una copia **superficial**: si `Producto` tuviera un atributo que fuera un objeto (por ejemplo, `List<String> categorias` o `Direccion direccion`), la copia compartiría la **misma referencia** a ese objeto entre `p1` y `p2`. Es decir, si se modifica esa lista desde `p2`, también cambiaría en `p1`.
+
+En el ejemplo actual esto no pasa porque `id` es primitivo y `nombre`/`marca` son `String` (inmutables), así que no hay riesgo. Pero si más adelante se agregan atributos que sean objetos mutables, sería necesario sobrescribir `clonar()` para clonarlos también manualmente (eso se conoce como **copia profunda** o *deep copy*).
+
+### 6. Ventaja frente a crear con `new` cada vez
+
+- Evita repetir toda la lógica de inicialización si el objeto base ya tiene una configuración compleja.
+- Es más rápido clonar que reconstruir un objeto costoso (por ejemplo, si la creación implicara consultas a una base de datos o cálculos pesados).
+- Permite tener "plantillas" (prototipos) de objetos y generar variantes a partir de ellas.
+
+
+# Patrón Singleton — `UsuarioSesion`
+
+## Código: `UsuarioSesion.java`
+
+```java
+package com.s2.singletons2;
+
+public class UsuarioSesion {
+
+    private static UsuarioSesion instancia;
+
+    private UsuarioSesion() {
+    }
+
+    public static UsuarioSesion getInstance() {
+        if (instancia == null) {
+            instancia = new UsuarioSesion();
+        }
+        return instancia;
+    }
+
+    private String nombre;
+
+    public static UsuarioSesion getInstancia() {
+        return instancia;
+    }
+
+    public static void setInstancia(UsuarioSesion instancia) {
+        UsuarioSesion.instancia = instancia;
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    // (el código continúa, se corta en la línea 29)
+}
+```
+
+## ¿De qué trata el patrón Singleton?
+
+El **Singleton** es un patrón de diseño creacional que garantiza que una clase tenga **una única instancia** en toda la aplicación, y proporciona un punto de acceso global a ella.
+
+### Los tres elementos clave de esta implementación
+
+1. **Atributo estático privado** (línea 5)
+
+   ```java
+   private static UsuarioSesion instancia;
+   ```
+
+   Guarda la única instancia que existirá de la clase. Es `static` porque pertenece a la clase, no a un objeto en particular.
+
+2. **Constructor privado** (línea 7-8)
+
+   ```java
+   private UsuarioSesion() {
+   }
+   ```
+
+   Al ser `private`, nadie puede hacer `new UsuarioSesion()` desde fuera de la clase. Esto obliga a usar el método de acceso controlado.
+
+3. **Método de acceso estático** (línea 10-15)
+
+   ```java
+   public static UsuarioSesion getInstance() {
+       if (instancia == null) {
+           instancia = new UsuarioSesion();
+       }
+       return instancia;
+   }
+   ```
+
+   Este es el único punto de entrada. La primera vez que se llama, como `instancia` es `null`, crea el objeto. Las siguientes veces, como ya no es `null`, simplemente devuelve la misma instancia ya creada. Esto se conoce como **lazy initialization** (inicialización perezosa): el objeto no se crea hasta que realmente se necesita.
+
+### ¿Por qué sirve esto?
+
+En la clase `SingletonS2` se ve el efecto en acción:
+
+```java
+UsuarioSesion us = UsuarioSesion.getInstance();
+us.setNombre("Marcos");
+UsuarioSesion us2 = UsuarioSesion.getInstance();
+us2.setNombre("Alucard");
+
+System.out.println(us == us2);        // true
+System.out.println(us.getNombre());   // Alucard
+System.out.println(us2.getNombre());  // Alucard
+```
+
+Aunque parece que `us` y `us2` son dos objetos distintos, en realidad **apuntan al mismo objeto en memoria** (`us == us2` da `true`). Por eso, al cambiar el nombre con `us2`, también cambia para `us`: es literalmente el mismo objeto.
+
+Este patrón es muy usado para cosas como: conexiones a bases de datos, configuración global de una app, gestores de logs, o —como en este ejemplo— **la sesión de un usuario**, donde tiene sentido que exista una sola instancia compartida en toda la aplicación.
