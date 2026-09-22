@@ -1,0 +1,148 @@
+# Apuntes de Java — Clase 11: SOLID Principles
+
+---
+
+### S - Single Responsibility Principle
+Una clase debe tener una única razón para cambiar.
+Establece que cada clase y función debe cumplir un solo objetivo.
+
+**Ejemplo:**
+```java
+// MAL: la clase hace dos cosas (lógica de negocio + persistencia)
+class Empleado {
+    void calcularSalario() { /* ... */ }
+    void guardarEnBaseDeDatos() { /* ... */ }
+}
+
+// BIEN: cada clase tiene una sola responsabilidad
+class Empleado {
+    void calcularSalario() { /* ... */ }
+}
+
+class EmpleadoRepositorio {
+    void guardar(Empleado e) { /* ... */ }
+}
+```
+Si mañana cambia la forma de calcular el salario, solo se toca `Empleado`. Si cambia la forma de guardar datos, solo se toca `EmpleadoRepositorio`.
+
+---
+
+### O - Open/Closed Principle
+Abierto para extensión, pero cerrado para modificación.
+Permite añadir nuevas funcionalidades sin alterar código que ya funciona.
+
+Por ejemplo: un `abstract` en Java define una clase o método incompleto que sirve como plantilla obligatoria, mientras que `extends` hereda esa estructura y `@Override` implementa o modifica el código de esos métodos en la clase hija.
+
+Funciona para cuando se trabaja en equipo, y necesitan especificarse en x área de la misma clase; por lo tanto la extienden en distintas y así se crean más clases sin modificar las que ya existen.
+
+**Ejemplo:**
+```java
+abstract class Figura {
+    abstract double calcularArea();
+}
+
+class Circulo extends Figura {
+    double radio;
+    @Override
+    double calcularArea() { return Math.PI * radio * radio; }
+}
+
+class Rectangulo extends Figura {
+    double base, altura;
+    @Override
+    double calcularArea() { return base * altura; }
+}
+```
+Si necesito una nueva figura (por ejemplo `Triangulo`), creo una clase nueva que extiende `Figura`, sin tocar `Circulo` ni `Rectangulo`.
+
+---
+
+### L - Liskov Substitution Principle
+Los objetos de una clase derivada deben poder sustituir a objetos de su clase base sin romper el programa.
+Todos deben seguir ciertos parámetros y ser iguales estructuralmente (misma firma de métodos, mismo comportamiento esperado).
+
+**Ejemplo:**
+```java
+class Ave {
+    void volar() { System.out.println("Estoy volando"); }
+}
+
+// MAL: rompe el principio, porque un Pinguino no puede volar
+class Pinguino extends Ave {
+    @Override
+    void volar() { throw new UnsupportedOperationException(); }
+}
+```
+Si en algún método uso `Ave a = new Pinguino();` y llamo `a.volar()`, el programa falla. Eso viola LSP. La solución sería no heredar `volar()` en clases que no pueden volar (por ejemplo, separando `Ave` de una interfaz `AveVoladora`).
+
+---
+
+### I - Interface Segregation Principle
+Los clientes no deben ser obligados a depender de interfaces que no utilizan.
+Es mejor tener varias interfaces pequeñas y específicas que una sola interfaz grande y genérica.
+
+**Ejemplo:**
+```java
+// MAL: una interfaz "gorda" que obliga a implementar métodos innecesarios
+interface Trabajador {
+    void trabajar();
+    void comer();
+}
+
+class Robot implements Trabajador {
+    public void trabajar() { /* ok */ }
+    public void comer() { /* un robot no come, pero está obligado a implementarlo */ }
+}
+
+// BIEN: interfaces separadas
+interface Trabajable { void trabajar(); }
+interface Alimentable { void comer(); }
+
+class Robot implements Trabajable {
+    public void trabajar() { /* ok */ }
+}
+
+class Persona implements Trabajable, Alimentable {
+    public void trabajar() { /* ok */ }
+    public void comer() { /* ok */ }
+}
+```
+
+---
+
+### D - Dependency Inversion Principle
+Los módulos de alto nivel no deben depender de módulos de bajo nivel; ambos deben depender de abstracciones (interfaces).
+Además, las abstracciones no deben depender de detalles, sino los detalles de las abstracciones.
+
+**Ejemplo:**
+```java
+// MAL: la clase de alto nivel depende directamente de una implementación concreta
+class MotorGasolina {
+    void encender() { System.out.println("Motor a gasolina encendido"); }
+}
+
+class Auto {
+    MotorGasolina motor = new MotorGasolina(); // dependencia rígida
+    void arrancar() { motor.encender(); }
+}
+
+// BIEN: se depende de una abstracción, no de una implementación concreta
+interface Motor {
+    void encender();
+}
+
+class MotorGasolina implements Motor {
+    public void encender() { System.out.println("Motor a gasolina encendido"); }
+}
+
+class MotorElectrico implements Motor {
+    public void encender() { System.out.println("Motor eléctrico encendido"); }
+}
+
+class Auto {
+    private Motor motor;
+    Auto(Motor motor) { this.motor = motor; } // inyección de dependencia
+    void arrancar() { motor.encender(); }
+}
+```
+Así, `Auto` puede funcionar con cualquier tipo de motor sin modificar su código, solo cambiando qué implementación se inyecta.
