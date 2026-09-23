@@ -1,0 +1,518 @@
+# Patrón Estructural Adapter (Java)
+
+Ejemplo del patrón **Adapter** (Adaptador) aplicado a aparatos tecnológicos: un `Televisor`, una `Radio` y un `SmartPhone` que se manejan a través de una misma interfaz común.
+
+---
+
+## 1. ¿Qué es el patrón Adapter?
+
+El Adapter es un patrón **estructural** que permite que dos clases con interfaces **incompatibles** trabajen juntas. Funciona como un adaptador de enchufe: no cambia el aparato ni la pared, solo traduce entre ambos.
+
+## 2. ¿Qué problema soluciona?
+
+Imagina que tienes un cliente (el `main`) que sabe manejar cualquier `AparatoTecnologico` con tres operaciones:
+
+- `encender()`
+- `apagar()`
+- `regular_volumen()`
+
+`Televisor` y `Radio` ya cumplen ese contrato. Pero `SmartPhone` **no**: sus métodos son otros y encender un celular no es una sola acción, sino una secuencia:
+
+| Operación del cliente | Lo que realmente hace el SmartPhone |
+|---|---|
+| `encender()` | `presionarBoton()` → `Login()` → `procesandoVerificacion()` → `cargaAplicaciones()` |
+| `apagar()` | `presionarBoton()` → `escogerOpcionApagado()` → `apagado()` |
+| `regular_volumen()` | `presionarBoton()` → `regularVolumen()` |
+
+Sin el patrón tendrías estos problemas:
+
+- **El cliente tendría que conocer los detalles de cada clase** y llenarse de `if`/`instanceof` para tratar al SmartPhone distinto a los demás.
+- **Modificar `SmartPhone`** para que implemente `AparatoTecnologico` puede ser imposible (código de terceros, librería, clase legada) o rompería otras partes que ya lo usan (viola el principio *Open/Closed*).
+- **Se duplicaría lógica** de traducción en cada lugar donde se use el SmartPhone.
+
+El Adapter resuelve esto poniendo **una clase intermedia** que recibe las llamadas del cliente en el formato esperado y las traduce a las llamadas propias del SmartPhone.
+
+## 3. Estructura y participantes
+
+| Rol en el patrón | Clase del ejemplo |
+|---|---|
+| **Target** (interfaz que espera el cliente) | `AparatoTecnologico` |
+| **Clientes / implementaciones compatibles** | `Televisor`, `Radio` |
+| **Adaptee** (clase incompatible) | `SmartPhone` |
+| **Adapter** (traductor) | `SmartPhoneAdapter` |
+| **Client** | `PatronEstructuralAdapterS2` (método `main`) |
+
+```mermaid
+classDiagram
+    class AparatoTecnologico {
+        <<abstract>>
+        +encender()
+        +apagar()
+        +regular_volumen()
+    }
+    class Televisor
+    class Radio
+    class SmartPhoneAdapter {
+        -SmartPhone x
+    }
+    class SmartPhone {
+        +presionarBoton()
+        +Login()
+        +procesandoVerificacion()
+        +cargaAplicaciones()
+        +regularVolumen()
+        +escogerOpcionApagado()
+        +apagado()
+    }
+    AparatoTecnologico <|-- Televisor
+    AparatoTecnologico <|-- Radio
+    AparatoTecnologico <|-- SmartPhoneAdapter
+    SmartPhoneAdapter o--> SmartPhone : adapta
+```
+
+## 4. Paso a paso de la implementación
+
+### Paso 1: Definir la interfaz objetivo (Target)
+
+Es el contrato que el cliente conoce y espera.
+
+```java
+package com.s2.patronestructuraladapters2;
+
+public abstract class AparatoTecnologico {
+
+    abstract void encender();
+
+    abstract void apagar();
+
+    abstract void regular_volumen();
+}
+```
+
+### Paso 2: Crear las clases que ya son compatibles
+
+`Televisor` y `Radio` simplemente extienden `AparatoTecnologico` e implementan sus métodos.
+
+```java
+package com.s2.patronestructuraladapters2;
+
+public class Televisor extends AparatoTecnologico {
+
+    @Override
+    void encender() {
+        System.out.println("Encendiendo televisor...");
+        System.out.println("Televisor encendido");
+    }
+
+    @Override
+    void apagar() {
+        System.out.println("Apagando televisor...");
+        System.out.println("Televisor apagado");
+    }
+
+    @Override
+    void regular_volumen() {
+        System.out.println("Regulando volumen...");
+        System.out.println("Volumen regulado");
+    }
+}
+```
+
+```java
+package com.s2.patronestructuraladapters2;
+
+public class Radio extends AparatoTecnologico {
+
+    @Override
+    void encender() {
+        System.out.println("Encendiendo radio...");
+        System.out.println("Radio encendido");
+    }
+
+    @Override
+    void apagar() {
+        System.out.println("Apagando radio...");
+        System.out.println("Radio apagado");
+    }
+
+    @Override
+    void regular_volumen() {
+        System.out.println("Regulando volumen...");
+        System.out.println("Volumen regulado");
+    }
+}
+```
+
+### Paso 3: Identificar la clase incompatible (Adaptee)
+
+`SmartPhone` tiene su propia forma de trabajar: métodos distintos y más granulares. **No se modifica.**
+
+```java
+package com.s2.patronestructuraladapters2;
+
+public class SmartPhone {
+
+    void presionarBoton() {
+        System.out.println("Presionando boton...");
+    }
+
+    void Login() {
+        System.out.println("Gestionando el tipo de login");
+    }
+
+    void procesandoVerificacion() {
+        System.out.println("Procesando verificacion");
+        System.out.println("Verificacion exitosa");
+    }
+
+    void regularVolumen() {
+        System.out.println("Regulando volumen");
+        System.out.println("Volumen regulado");
+    }
+
+    void cargaAplicaciones() {
+        System.out.println("Cargando aplicaciones...");
+        System.out.println("Aplicaciones cargadas");
+    }
+
+    void escogerOpcionApagado() {
+        System.out.println("Opcion escogida");
+    }
+
+    void apagado() {
+        System.out.println("Telefono apagado");
+    }
+}
+```
+
+### Paso 4: Crear el Adapter
+
+La clase `SmartPhoneAdapter`:
+
+1. **Extiende** `AparatoTecnologico` → así el cliente puede tratarla como cualquier otro aparato.
+2. **Contiene** una instancia de `SmartPhone` (composición) → así puede delegarle el trabajo real.
+3. **Traduce** cada método del contrato a la secuencia de llamadas del SmartPhone.
+
+```java
+package com.s2.patronestructuraladapters2;
+
+public class SmartPhoneAdapter extends AparatoTecnologico {
+
+    SmartPhone x = new SmartPhone();
+
+    @Override
+    void encender() {
+        x.presionarBoton();
+        x.Login();
+        x.procesandoVerificacion();
+        x.cargaAplicaciones();
+    }
+
+    @Override
+    void apagar() {
+        x.presionarBoton();
+        x.escogerOpcionApagado();
+        x.apagado();
+    }
+
+    @Override
+    void regular_volumen() {
+        x.presionarBoton();
+        x.regularVolumen();
+    }
+}
+```
+
+### Paso 5: Usar el Adapter desde el cliente
+
+El `main` declara todas las variables como `AparatoTecnologico` y llama a los mismos métodos sin importar si detrás hay un televisor, una radio o un celular. **El cliente no sabe que existe un adaptador.**
+
+```java
+package com.s2.patronestructuraladapters2;
+
+public class PatronEstructuralAdapterS2 {
+
+    public static void main(String[] args) {
+        AparatoTecnologico televisor = new Televisor();
+        AparatoTecnologico radio = new Radio();
+        AparatoTecnologico smartphone = new SmartPhoneAdapter();
+
+        System.out.println("****Televisor****");
+        televisor.encender();
+        televisor.regular_volumen();
+        televisor.apagar();
+        System.out.println("\n");
+
+        System.out.println("****Radio****");
+        radio.encender();
+        radio.regular_volumen();
+        radio.apagar();
+        System.out.println("\n");
+
+        System.out.println("****SmartPhone****");
+        smartphone.encender();
+        smartphone.regular_volumen();
+        smartphone.apagar();
+    }
+}
+```
+
+## 5. Flujo de una llamada
+
+Cuando el cliente ejecuta `smartphone.encender()`:
+
+1. El cliente llama `encender()` sobre una variable de tipo `AparatoTecnologico`.
+2. En realidad el objeto es un `SmartPhoneAdapter`, que recibe la llamada.
+3. El adapter la traduce y ejecuta en orden: `presionarBoton()`, `Login()`, `procesandoVerificacion()` y `cargaAplicaciones()` sobre el `SmartPhone`.
+4. El cliente recibe el resultado sin haber conocido nada de esa complejidad.
+
+## 6. Ventajas del patrón
+
+- **Reutilización:** se aprovecha `SmartPhone` sin modificarlo.
+- **Principio de responsabilidad única:** la lógica de conversión queda aislada en el adapter.
+- **Open/Closed:** se pueden agregar nuevos adaptadores (tablet, consola, etc.) sin tocar el cliente ni las clases existentes.
+- **Polimorfismo:** el cliente trata todo por igual a través de `AparatoTecnologico`.
+
+## 7. Cuándo usarlo
+
+- Cuando quieres usar una clase existente cuya interfaz no coincide con la que necesitas.
+- Cuando integras librerías o código de terceros que no puedes modificar.
+- Cuando necesitas que varias clases distintas se comporten bajo un mismo contrato.
+
+## 8. Ejecución
+
+Al correr el `main` se imprime, por ejemplo, para el SmartPhone:
+
+```
+****SmartPhone****
+Presionando boton...
+Gestionando el tipo de login
+Procesando verificacion
+Verificacion exitosa
+Cargando aplicaciones...
+Aplicaciones cargadas
+Presionando boton...
+Regulando volumen
+Volumen regulado
+Presionando boton...
+Opcion escogida
+Telefono apagado
+```
+
+# Patrón Estructural Facade (Java)
+
+Ejemplo del patrón **Facade** (Fachada) aplicado a un cine en casa: un proyector, un teatro en casa (sonido), las luces y un reproductor que se controlan con **una sola llamada** desde una clase fachada.
+
+---
+
+## 1. ¿Qué es el patrón Facade?
+
+El Facade es un patrón **estructural** que ofrece una **interfaz simplificada y unificada** para un conjunto de clases (un subsistema) complejo. Funciona como el botón "Modo cine" de un control universal: tú presionas uno solo y por detrás se encienden el proyector, el sonido, se bajan las luces y arranca la película.
+
+## 2. ¿Qué problema soluciona?
+
+Para ver una película en casa hay que interactuar con varios componentes, cada uno con su propia clase y sus propios métodos:
+
+| Componente | Lo que hay que hacer |
+|---|---|
+| `Proyector` | `encender()` |
+| `TeatroEnCasa` | `conexion()` |
+| `Luces` | `atenuar()` |
+| `Reproductor` | `reproducir()` |
+
+Sin el patrón, el cliente (el `main`) tendría que:
+
+- **Conocer todas las clases del subsistema** y crear una instancia de cada una.
+- **Saber el orden correcto** de las llamadas (por ejemplo, conectar el sonido antes de reproducir).
+- **Repetir esa secuencia** en cada lugar donde quiera ver una película.
+- Quedar **acoplado** a cada clase: si el subsistema cambia (se agrega un nuevo componente o cambia un método), hay que modificar todos los clientes.
+
+El Facade resuelve esto con una clase intermedia (`CineEnCasaFacade`) que **encapsula toda esa complejidad** y expone un método simple: `nochePeliculas()`.
+
+## 3. Estructura y participantes
+
+| Rol en el patrón | Clase del ejemplo |
+|---|---|
+| **Facade** (fachada) | `CineEnCasaFacade` |
+| **Clases del subsistema** | `Proyector`, `TeatroEnCasa`, `Luces`, `Reproductor` |
+| **Client** | `PatronFacadeS2` (método `main`) |
+
+```mermaid
+classDiagram
+    class PatronFacadeS2 {
+        +main(String[] args)
+    }
+    class CineEnCasaFacade {
+        -Proyector p
+        -TeatroEnCasa tc
+        -Luces l
+        -Reproductor r
+        +nochePeliculas()
+    }
+    class Proyector {
+        +encender()
+    }
+    class TeatroEnCasa {
+        +conexion()
+    }
+    class Luces {
+        +atenuar()
+    }
+    class Reproductor {
+        +reproducir()
+    }
+    PatronFacadeS2 --> CineEnCasaFacade : usa
+    CineEnCasaFacade --> Proyector
+    CineEnCasaFacade --> TeatroEnCasa
+    CineEnCasaFacade --> Luces
+    CineEnCasaFacade --> Reproductor
+```
+
+## 4. Paso a paso de la implementación
+
+### Paso 1: Crear las clases del subsistema
+
+Cada clase tiene una responsabilidad única y **no sabe nada de las demás ni de la fachada**.
+
+```java
+package com.s2.patronfacades2;
+
+public class Proyector {
+
+    void encender() {
+        System.out.println("Encendiendo proyector");
+        System.out.println("Escogiendo puerto");
+        System.out.println("Proyector escogido!");
+    }
+}
+```
+
+```java
+package com.s2.patronfacades2;
+
+public class TeatroEnCasa {
+
+    public void conexion() {
+        System.out.println("Encendiendo teatro en casa");
+        System.out.println("Conectando sonido...");
+        System.out.println("Sonido conectado!");
+    }
+}
+```
+
+```java
+package com.s2.patronfacades2;
+
+public class Luces {
+
+    void atenuar() {
+        System.out.println("Regulando luces...");
+        System.out.println("Luces reguladas.");
+    }
+}
+```
+
+```java
+package com.s2.patronfacades2;
+
+public class Reproductor {
+
+    void reproducir() {
+        System.out.println("Escogiendo peliculas...");
+        System.out.println("Reproduciendo pelicula!");
+    }
+}
+```
+
+### Paso 2: Crear la clase Facade
+
+`CineEnCasaFacade`:
+
+1. **Contiene** una instancia de cada clase del subsistema (composición).
+2. **Define un método simple** (`nochePeliculas()`) que ejecuta en el orden correcto todas las llamadas necesarias.
+3. **Oculta** al cliente qué clases hay detrás y cómo se coordinan.
+
+```java
+package com.s2.patronfacades2;
+
+public class CineEnCasaFacade {
+
+    private Proyector p = new Proyector();
+    private TeatroEnCasa tc = new TeatroEnCasa();
+    private Luces l = new Luces();
+    private Reproductor r = new Reproductor();
+
+    public void nochePeliculas() {
+        p.encender();
+        tc.conexion();
+        l.atenuar();
+        r.reproducir();
+    }
+}
+```
+
+### Paso 3: Usar la fachada desde el cliente
+
+El `main` solo crea la fachada y llama a un método. No importa ni conoce `Proyector`, `Luces`, etc.
+
+```java
+package com.s2.patronfacades2;
+
+public class PatronFacadeS2 {
+
+    public static void main(String[] args) {
+        CineEnCasaFacade cc = new CineEnCasaFacade();
+        cc.nochePeliculas();
+    }
+}
+```
+
+## 5. Flujo de una llamada
+
+Cuando el cliente ejecuta `cc.nochePeliculas()`:
+
+1. La fachada recibe la petición.
+2. Llama a `p.encender()` para encender el proyector.
+3. Llama a `tc.conexion()` para encender el teatro en casa y conectar el sonido.
+4. Llama a `l.atenuar()` para bajar las luces.
+5. Llama a `r.reproducir()` para escoger y reproducir la película.
+6. El cliente obtiene todo el resultado con **una sola línea** de código.
+
+## 6. Ventajas del patrón
+
+- **Simplicidad:** el cliente usa una interfaz sencilla en vez de manejar todo el subsistema.
+- **Bajo acoplamiento:** el cliente depende solo de la fachada; si el subsistema cambia, solo se modifica la fachada.
+- **Orden garantizado:** la secuencia correcta de pasos queda definida en un único lugar.
+- **Reutilización:** cualquier cliente puede usar `nochePeliculas()` sin repetir código.
+- Las clases del subsistema **siguen disponibles** para quien necesite usarlas directamente.
+
+## 7. Cuándo usarlo
+
+- Cuando quieres dar una interfaz simple a un subsistema complejo.
+- Cuando hay muchas dependencias entre el cliente y las clases de implementación.
+- Cuando quieres organizar un sistema en capas y definir puntos de entrada claros a cada una.
+
+## 8. Diferencia con el patrón Adapter
+
+| Facade | Adapter |
+|---|---|
+| **Simplifica** una interfaz compleja. | **Convierte** una interfaz en otra que el cliente espera. |
+| Trabaja con **varias clases** a la vez. | Suele envolver **una sola clase**. |
+| Crea una interfaz **nueva**. | Se ajusta a una interfaz **ya existente**. |
+
+## 9. Ejecución
+
+Al correr el `main` se imprime:
+
+```
+Encendiendo proyector
+Escogiendo puerto
+Proyector escogido!
+Encendiendo teatro en casa
+Conectando sonido...
+Sonido conectado!
+Regulando luces...
+Luces reguladas.
+Escogiendo peliculas...
+Reproduciendo pelicula!
+```
