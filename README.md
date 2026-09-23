@@ -22,8 +22,9 @@ En cualquier página del repo, presiona la tecla `T` (o haz clic en "Go to file"
 | Ciclos | [CICLOS](./CICLOS) | 09-09-26 |
 | Cadenas/Conversion |[CADENAS CONVERSION](./CADENAS%20CONVERSION)| 10-09-26 |
 | POO |[POO](./POO)| 11-09-26 |
-| - |[NOMBRE EXACTO DEL ARCHIVO](./NOMBRE%20EXACTO%20DEL%20ARCHIVO.md)| - |
-| - |[NOMBRE EXACTO DEL ARCHIVO](./NOMBRE%20EXACTO%20DEL%20ARCHIVO.md)| - |
+| SOLID |[SOLID](./SOLID)| 21-09-26 |
+| PATRONES |[PATRONES](./PATRONES)| - |
+| PATRONES ESTRUCTURALES |[PATRONES ESTRUCTURALES](./PATRONES%20ESTRUCTURALES)| - |
 ---
 
 ## ➕ Cómo mantener este índice actualizado
