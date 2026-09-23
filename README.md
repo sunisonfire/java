@@ -23,8 +23,8 @@ En cualquier página del repo, presiona la tecla `T` (o haz clic en "Go to file"
 | Cadenas/Conversion |[CADENAS CONVERSION](./CADENAS%20CONVERSION)| 10-09-26 |
 | POO |[POO](./POO)| 11-09-26 |
 | SOLID |[SOLID](./SOLID)| 21-09-26 |
-| PATRONES |[PATRONES](./PATRONES)| - |
-| PATRONES ESTRUCTURALES |[PATRONES ESTRUCTURALES](./PATRONES%20ESTRUCTURALES)| - |
+| PATRONES |[PATRONES](./PATRONES)| 22-09-26 |
+| PATRONES ESTRUCTURALES |[PATRONES ESTRUCTURALES](./PATRONES%20ESTRUCTURALES)| 23-09-26 |
 ---
 
 ## ➕ Cómo mantener este índice actualizado
