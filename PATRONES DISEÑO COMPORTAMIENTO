@@ -1,0 +1,393 @@
+# Patrones de Diseño de Comportamiento
+
+Este documento reúne los patrones de diseño de tipo **comportamiento** vistos en clase — **Iterator**, **Mediator**, **Memento**, **Observer** y **Strategy** — junto con los conceptos de apoyo (hilos, caché, multitareas, RAM, CRUD e interfaz vs. clase abstracta) necesarios para entender los ejemplos en Java.
+
+Los patrones de comportamiento se enfocan en **cómo interactúan y se reparten responsabilidades los objetos entre sí**, más que en cómo se crean o se estructuran.
+
+---
+
+## Índice
+
+1. [Conceptos básicos de computación](#1-conceptos-básicos-de-computación)
+2. [Iterator](#2-iterator)
+3. [Mediator](#3-mediator)
+4. [Memento](#4-memento)
+5. [Observer](#5-observer)
+6. [Strategy](#6-strategy)
+7. [¿Qué es un CRUD?](#7-qué-es-un-crud)
+8. [Interfaz vs. clase abstracta](#8-interfaz-vs-clase-abstracta)
+9. [Resumen rápido](#9-resumen-rápido)
+
+---
+
+## 1. Conceptos básicos de computación
+
+| Concepto | Definición |
+|---|---|
+| **Hilo (thread)** | Subproceso dentro del computador. Es la unidad más pequeña de ejecución dentro de un proceso. |
+| **Caché** | Memoria temporal de acceso rápido donde se guardan datos usados con frecuencia. |
+| **Multitareas** | Capacidad de asignar distintos hilos para que varias tareas avancen al mismo tiempo. |
+| **RAM** | Memoria principal del computador; se encarga de repartir el espacio disponible entre los procesos e hilos en ejecución. |
+
+```
+        ┌────────────────────────────┐
+        │            RAM             │  ← reparte memoria
+        └────────────┬───────────────┘
+                     │
+        ┌────────────▼───────────────┐
+        │      Caché (temporal)      │  ← acceso rápido
+        └────────────┬───────────────┘
+                     │
+     ┌───────────────┼───────────────┐
+     ▼               ▼               ▼
+  Hilo 1          Hilo 2          Hilo 3     ← multitareas
+```
+
+- La **RAM** reparte la memoria entre los distintos procesos.
+- La **caché** guarda de forma temporal lo que se necesita con más frecuencia.
+- Los **hilos** ejecutan las tareas, y al asignar varios se logra la **multitarea**.
+
+---
+
+## 2. Iterator
+
+Recorre los elementos de una colección **sin exponer su representación subyacente** (lista, pila, árbol).
+
+- Permite acceder a los elementos uno por uno sin conocer cómo están almacenados.
+- Se puede cambiar la estructura interna sin afectar al código que la recorre.
+
+---
+
+## 3. Mediator
+
+Reduce las **dependencias caóticas** forzando a los objetos a comunicarse solo a través de un **objeto mediador**.
+
+- Los objetos no se conocen entre sí; solo conocen al mediador.
+- Centraliza la comunicación y facilita el mantenimiento.
+
+---
+
+## 4. Memento
+
+Permite **guardar y restaurar el estado previo** de un objeto sin revelar los detalles de su implementación.
+
+- Es la base para implementar funciones de **Undo (Deshacer)** y **Redo (Rehacer)** en aplicaciones complejas.
+
+---
+
+## 5. Observer
+
+### Suscripción y Notificación
+
+Define un mecanismo para **notificar a varios objetos** sobre cualquier evento que le suceda al objeto que están observando.
+
+- Relación **uno-a-muchos**.
+- **Sujeto (Observable)** y **Observadores**.
+- Notificación automática ante cambios de estado.
+
+### Ejemplo en Java: Bodega y Productos
+
+En el ejemplo, la `Bodega` es el sujeto y `Administrador` y `Auditoria` son los observadores. Cada vez que se registra un producto, todos los observadores reciben el aviso.
+
+| Clase / Interfaz | Rol |
+|---|---|
+| `Bodega` | Sujeto observable. Guarda una lista de observadores y los notifica. |
+| `ObservarBodega` | Interfaz que define el método `actualizar(...)`. |
+| `Administrador`, `Auditoria` | Observadores concretos que implementan `ObservarBodega`. |
+| `Producto` | Objeto que se registra (nombre y descripción). |
+| `PatronObserversS2` | Clase con el `main` que prueba todo. |
+
+**Interfaz del observador**
+
+```java
+public interface ObservarBodega {
+    void actualizar(Producto p, String bodega);
+}
+```
+
+**Sujeto (Bodega)**
+
+```java
+public class Bodega {
+    List<ObservarBodega> observer = new ArrayList<>();
+    private String nombre;
+
+    public void agregarObservador(ObservarBodega observador) {
+        observer.add(observador);
+    }
+
+    public void eliminarObservador(ObservarBodega observador) {
+        observer.remove(observador);
+    }
+
+    public void registrarProducto(Producto p) {
+        System.out.println("Registrando producto en bodega " + nombre);
+        for (ObservarBodega observador : observer) {
+            observador.actualizar(p, nombre);   // notifica a todos
+        }
+    }
+}
+```
+
+**Observador (Administrador)**
+
+```java
+public class Administrador implements ObservarBodega {
+    @Override
+    public void actualizar(Producto p, String bodega) {
+        System.out.println("Administración -> se registró el producto "
+            + p.getNombre() + " " + p.getDescripcion()
+            + ", en la bodega " + bodega);
+    }
+}
+```
+
+`Auditoria` funciona igual, pero con su propio mensaje.
+
+**Uso (main)**
+
+```java
+Bodega bodega1 = new Bodega("Principal");
+Bodega bodega2 = new Bodega("Rural");
+Auditoria a = new Auditoria();
+Administrador aa = new Administrador();
+
+bodega1.agregarObservador(a);
+bodega1.agregarObservador(aa);
+
+bodega1.registrarProducto(new Producto("Piña", "Fresquecita"));
+```
+
+Al registrar el producto, tanto `Auditoria` como `Administrador` reciben la notificación de forma automática.
+
+---
+
+## 6. Strategy
+
+### ¿Qué es?
+
+Define una **familia de algoritmos**, encapsula cada uno en su propia clase y los hace **intercambiables**. El objeto que los usa (el *contexto*) no necesita saber cómo funciona cada algoritmo, solo llama al método común.
+
+- Evita llenar el código de `if / else` o `switch` para elegir el algoritmo.
+- Permite agregar nuevas estrategias sin modificar el código existente.
+- La estrategia se puede cambiar **en tiempo de ejecución**.
+
+### Estructura
+
+```
+            ┌──────────────────────────┐
+            │  GestionarEnvioStrategy  │  ← Contexto
+            │  - tipoEnvio: TipoEnvio  │
+            └────────────┬─────────────┘
+                         │ usa
+                         ▼
+               ┌───────────────────┐
+               │  «interface»      │  ← Estrategia
+               │  TipoEnvio        │
+               │  costoEnvio(int)  │
+               └─────────┬─────────┘
+          ┌──────────────┼───────────────┐
+          ▼              ▼               ▼
+   Servientrega    Interrapidisimo   Coordinadora    ← Estrategias concretas
+```
+
+| Rol | Clase en el ejemplo | Función |
+|---|---|---|
+| **Estrategia** | `TipoEnvio` (interfaz) | Define el método común `costoEnvio(int tamaño)`. |
+| **Estrategias concretas** | `Servientrega`, `Interrapidisimo`, `Coordinadora` | Cada una calcula el costo a su manera. |
+| **Contexto** | `GestionarEnvioStrategy` | Recibe una estrategia y la usa para calcular el costo. |
+| **Cliente** | `PatronStrategyS2` (`main`) | Elige qué estrategia entregarle al contexto. |
+
+### Ejemplo: costo de envío de paquetes
+
+Al enviar un paquete se toma un **precio base de 10.000 por kilo** y se le aplica un incremento según la empresa transportadora.
+
+**Interfaz (Estrategia)**
+
+```java
+public interface TipoEnvio {
+    double costoEnvio(int tamaño);
+}
+```
+
+**Estrategias concretas**
+
+```java
+public class Servientrega implements TipoEnvio {
+    @Override
+    public double costoEnvio(int tamaño) {
+        return (tamaño * 10000) * 1.18;
+    }
+}
+
+public class Interrapidisimo implements TipoEnvio {
+    @Override
+    public double costoEnvio(int tamaño) {
+        return (tamaño * 10000) * 1.2;
+    }
+}
+
+public class Coordinadora implements TipoEnvio {
+    @Override
+    public double costoEnvio(int tamaño) {
+        return (tamaño * 10000) * 1.15;
+    }
+}
+```
+
+**Contexto**
+
+```java
+public class GestionarEnvioStrategy {
+
+    private TipoEnvio tipoEnvio;
+
+    public GestionarEnvioStrategy(TipoEnvio tipoEnvio) {
+        this.tipoEnvio = tipoEnvio;
+    }
+
+    public void gestionar(String nombre) {
+        if (tipoEnvio == null) {
+            System.out.println("Error, no se ha seleccionado una estrategia de envío");
+        } else {
+            int tamaño = Integer.parseInt(JOptionPane.showInputDialog(...));
+            System.out.println("El envío por la empresa " + nombre
+                + " cuesta " + tipoEnvio.costoEnvio(tamaño));
+        }
+    }
+}
+```
+
+**Uso (main)**
+
+```java
+TipoEnvio tipoEnvio  = new Coordinadora();
+TipoEnvio tipoEnvio2 = new Interrapidisimo();
+TipoEnvio tipoEnvio3 = null;
+
+GestionarEnvioStrategy gestionarEnvioStrategy  = new GestionarEnvioStrategy(tipoEnvio);
+GestionarEnvioStrategy gestionarEnvioStrategy2 = new GestionarEnvioStrategy(tipoEnvio2);
+GestionarEnvioStrategy gestionarEnvioStrategy3 = new GestionarEnvioStrategy(tipoEnvio3);
+
+gestionarEnvioStrategy.gestionar("Coordinadora");
+gestionarEnvioStrategy2.gestionar("Interrapidisimo");
+gestionarEnvioStrategy3.gestionar("nadsdsd");   // estrategia null → muestra el error
+```
+
+**Cómo funciona:**
+
+1. El cliente crea la estrategia que quiere (`Coordinadora`, `Interrapidisimo`, etc.).
+2. Se la pasa al contexto por el constructor.
+3. El contexto llama a `costoEnvio(tamaño)` sin saber qué empresa es.
+4. Si la estrategia es `null`, el contexto muestra un mensaje de error en lugar de calcular.
+
+**Ejemplo numérico:** un paquete de 5 kilos con `Coordinadora`: `(5 * 10000) * 1.15 = 57.500`
+
+### Ventajas y desventajas
+
+| Ventajas | Desventajas |
+|---|---|
+| Fácil de ampliar con nuevas estrategias | Aumenta el número de clases |
+| Código más limpio, sin `if/else` gigantes | El cliente debe conocer las estrategias para elegir una |
+| Cada algoritmo se prueba por separado | Puede ser excesivo si solo hay 1 o 2 variantes |
+
+---
+
+## 7. ¿Qué es un CRUD?
+
+**CRUD** son las cuatro operaciones básicas que se hacen sobre los datos de una aplicación o base de datos:
+
+| Letra | Operación | Qué hace | SQL equivalente |
+|---|---|---|---|
+| **C** | Create (Crear) | Agrega un registro nuevo | `INSERT` |
+| **R** | Read (Leer) | Consulta uno o varios registros | `SELECT` |
+| **U** | Update (Actualizar) | Modifica un registro existente | `UPDATE` |
+| **D** | Delete (Eliminar) | Borra un registro | `DELETE` |
+
+**Ejemplo:** en una bodega, crear un producto, listar los productos, cambiar su descripción y eliminarlo.
+
+---
+
+## 8. Interfaz vs. clase abstracta
+
+### ¿Qué es una interfaz (`interface`)?
+
+Es un **contrato**: define *qué* métodos debe tener una clase, pero no *cómo* se implementan. La clase que la usa debe implementar todos sus métodos.
+
+```java
+public interface ObservarBodega {
+    void actualizar(Producto p, String bodega);
+}
+
+public class Administrador implements ObservarBodega {
+    @Override
+    public void actualizar(Producto p, String bodega) { /* ... */ }
+}
+```
+
+- Se usa la palabra `implements`.
+- Una clase puede implementar **varias** interfaces.
+- No guarda estado propio (solo constantes); los métodos normalmente no tienen cuerpo.
+
+### ¿Qué es una clase abstracta (`abstract`)?
+
+Es una clase **incompleta** que no se puede instanciar directamente. Sirve como base para otras clases y puede tener métodos ya implementados y otros abstractos (sin cuerpo) que las hijas deben completar.
+
+```java
+public abstract class Empleado {
+    protected String nombre;               // atributos compartidos
+
+    public String getNombre() {            // método ya implementado
+        return nombre;
+    }
+
+    public abstract double calcularSalario();   // cada hija lo define
+}
+
+public class Vendedor extends Empleado {
+    @Override
+    public double calcularSalario() { return 1500000; }
+}
+```
+
+- Se usa la palabra `extends`.
+- Una clase solo puede heredar de **una** clase abstracta.
+- Puede tener atributos, constructores y métodos con código.
+
+### Comparación
+
+| Característica | Interfaz | Clase abstracta |
+|---|---|---|
+| Palabra clave | `implements` | `extends` |
+| Herencia múltiple | Sí (varias interfaces) | No (solo una clase) |
+| Métodos con código | Solo `default` / `static` | Sí |
+| Atributos de instancia | No (solo constantes) | Sí |
+| Constructor | No | Sí |
+| Relación | "**puede hacer**" (capacidad) | "**es un**" (tipo base) |
+
+### ¿Cuándo usar cada una?
+
+- **Interfaz:** cuando clases *sin relación entre sí* deben cumplir el mismo comportamiento. Ejemplo: `Administrador`/`Auditoria` (Observer) o `Servientrega`/`Coordinadora` (Strategy) no son parientes, pero comparten un contrato.
+- **Clase abstracta:** cuando varias clases *están relacionadas* y comparten atributos y código común, y solo cambian algunos detalles. Ejemplo: `Vendedor` y `Gerente` son tipos de `Empleado`.
+
+> **Regla rápida:** si solo necesitas definir un comportamiento, usa una **interfaz**. Si necesitas compartir código y estado entre clases parecidas, usa una **clase abstracta**.
+
+---
+
+## 9. Resumen rápido
+
+| Patrón | Idea clave | Se apoya en |
+|---|---|---|
+| **Iterator** | Recorre una colección sin exponer su estructura. | Interfaz de iteración |
+| **Mediator** | Centraliza la comunicación entre objetos. | Objeto mediador |
+| **Memento** | Guarda y restaura estados (Undo/Redo). | Similar a la caché (memoria temporal) |
+| **Observer** | Notifica a varios objetos ante un cambio (uno-a-muchos). | Interfaz `ObservarBodega` |
+| **Strategy** | Familia de algoritmos intercambiables en tiempo de ejecución. | Interfaz `TipoEnvio` |
+
+- **Hilo** → subproceso dentro del computador.
+- **Caché** → memoria temporal.
+- **Multitareas** → asignar distintos hilos.
+- **RAM** → reparte la memoria.
+- **CRUD** → Create, Read, Update, Delete.
+- **Interfaz** → contrato de comportamiento, sin relación de parentesco entre clases.
+- **Clase abstracta** → base común para clases emparentadas, con código compartido.
