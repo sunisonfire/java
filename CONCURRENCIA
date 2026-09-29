@@ -1,0 +1,258 @@
+# Concurrencia en Java
+
+## ¿Qué es la concurrencia?
+
+La concurrencia es la capacidad de un programa para ejecutar varias computaciones simultáneamente, de manera lógica o física. Esto se logra distribuyendo las computaciones entre los múltiples núcleos de la CPU disponibles, o incluso entre diferentes máquinas en red.
+
+**Ventaja clave:** permite una mejor utilización de los recursos del sistema y mejora significativamente el rendimiento y la respuesta de las aplicaciones.
+
+## Concurrencia en el entorno de Java
+
+- **Proceso:** se mapea directamente a una instancia en ejecución de la Máquina Virtual de Java (JVM), con recursos de memoria aislados.
+- **Hilo (Thread):** unidad de ejecución más ligera que coexiste dentro de la JVM y comparte memoria y recursos con otros hilos.
+- **Hilo principal (main thread):** toda aplicación Java tiene al menos este hilo, responsable de ejecutar el método `main()`.
+
+## Procesos vs. Hilos (Threads)
+
+La elección entre procesos e hilos define la arquitectura de recursos del programa concurrente.
+
+| Característica | Procesos (OS) | Hilos (Threads) |
+|---|---|---|
+| **Espacio de memoria** | Privado y aislado por proceso. | Compartido dentro del mismo proceso. |
+| **Costo de creación** | Alto (requiere asignación de recursos del SO). | Bajo (más ligeros, creación rápida). |
+| **Comunicación (IPC)** | Lenta y compleja (sockets, tuberías). | Muy rápida (mediante variables/memoria compartida). |
+| **Equivalencia en Java** | Una instancia completa de la JVM en ejecución. | Sub-tareas dinámicas iniciadas dentro de la JVM. |
+
+## Nota de diseño
+
+> Aunque compartir memoria hace a los hilos extremadamente eficientes, introduce la necesidad de **sincronización** para evitar **condiciones de carrera (Race Conditions)**.
+
+# Ejercicio: pagos de nómina con hilos en Java
+
+## Descripción
+
+El programa simula que una empresa paga el salario a 5 empleados a través de un solo banco. Cada empleado es un **hilo** (`Thread`) que intenta hacer su transferencia al mismo tiempo, pero el banco solo atiende **uno a la vez** gracias a la palabra clave `synchronized`.
+
+## Estructura del proyecto
+
+| Clase | Rol |
+|---|---|
+| `Principal` | Punto de entrada. Crea el banco, lanza los 5 hilos y espera a que terminen. |
+| `Empleado` | Tarea de cada hilo (`Runnable`). Calcula un salario aleatorio y pide la transferencia. |
+| `Banco` | Recurso compartido. Su método `transferir` está sincronizado. |
+
+## Explicación paso a paso
+
+### 1. `Principal`: el punto de entrada
+- La JVM arranca el **hilo principal** (`main`).
+- Se crea **un solo objeto `Banco`**, compartido por todos.
+- Se crean 5 hilos (`e1` a `e5`), cada uno con un `Empleado` distinto (David, Pablo, Juan, Maria, Julian). Todos reciben **la misma instancia** de `banco`.
+- `start()` lanza cada hilo. Desde ese momento corren de forma concurrente y el orden lo decide el planificador.
+- `join()` hace que el hilo principal **espere** a que cada hilo termine. Sin esto, `main` podría imprimir "Proceso terminado" antes de que acabaran los pagos.
+- Al final imprime `Proceso terminado correctamente!`.
+
+### 2. `Empleado`: la tarea de cada hilo
+- Implementa `Runnable`, así que su método `run()` es lo que ejecuta cada hilo.
+- `calcularSalario()` genera un salario aleatorio entre 5.000.000 y 8.000.000.
+- En `run()` cada empleado:
+  1. Calcula su salario.
+  2. Imprime `Iniciando pago...`.
+  3. Llama a `banco.transferir(nombre, salario)` y, al terminar, imprime `Transferencia realizada con exito!`.
+
+### 3. `Banco`: el recurso compartido
+- `transferir` está marcado como **`synchronized`**: el método usa un *lock* sobre el objeto `banco`, y solo **un hilo a la vez** puede estar dentro. Los demás quedan bloqueados esperando su turno (como una cola).
+- `Thread.sleep(2000)` simula los 2 segundos que tarda la conexión y gestión del pago.
+- Luego imprime que el pago fue enviado.
+
+## Qué se ve al ejecutarlo
+
+1. Casi de inmediato aparecen los 5 mensajes `Iniciando pago...` de `run()` (todos los hilos arrancan a la vez, en cualquier orden).
+2. Un hilo entra a `transferir`, imprime su propio `Iniciando pago...` y espera 2 segundos.
+3. Sale, imprime `Nombre -> Pago de $... enviado con éxito!` y libera el lock.
+4. Entra el siguiente hilo, y así sucesivamente.
+5. En total tarda unos **10 segundos** (5 × 2 s), porque los pagos son secuenciales.
+6. Al final aparece `Proceso terminado correctamente!`.
+
+El orden de los empleados **no está garantizado**.
+
+## Por qué se usa `synchronized`
+
+Sin `synchronized`, los 5 hilos entrarían a `transferir` a la vez y todo terminaría en ~2 segundos. Con un recurso real (por ejemplo, un saldo que se modifica) eso causaría **condiciones de carrera**. `synchronized` garantiza **exclusión mutua**: el banco procesa un pago a la vez.
+
+## Código
+
+### `Banco.java`
+
+```java
+package com.factory.banco;
+
+public class Banco {
+
+    //que los hilos dejen de actuar todos al mismo tiempo y actuen en cola.
+    public synchronized void transferir(String nombre, double monto) {
+        System.out.println("Iniciando pago...");
+        try {
+            Thread.sleep(2000);//permite simular la conexion y gestion de pago al banco
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        System.out.println(nombre + " -> Pago de $" + monto + " enviado con éxito!");
+    }
+}
+```
+
+### `Empleado.java`
+
+```java
+package com.f.banco;
+
+public class Empleado implements Runnable {
+
+    private String nombre;
+    private Banco banco;
+
+    public Empleado(String nombre, Banco banco) {
+        this.nombre = nombre;
+        this.banco = banco;
+    }
+
+    double calcularSalario() {
+        return Math.round(Math.random() * 3000000 + 5000000);
+    }
+
+    //tenga subprocesos (hilos)
+    //cada uno se ejecta al mismo tiempo
+    @Override
+    public void run() {
+        double salario = calcularSalario();
+        System.out.println("Iniciando pago...");
+        banco.transferir(nombre, salario); //dejamos que cada hilo deje de ejecutarse al mismo
+        //tiempo y haga su respectiva accion.
+        System.out.println("Transferencia realizada con exito!");
+    }
+}
+```
+
+### `Principal.java`
+
+```java
+package com.factory.banco;
+
+public class Principal {
+
+    public static void main(String[] args) throws InterruptedException {
+        Banco banco = new Banco();
+        Thread e1 = new Thread(new Empleado("David", banco));
+        Thread e2 = new Thread(new Empleado("Pablo", banco));
+        Thread e3 = new Thread(new Empleado("Juan", banco));
+        Thread e4 = new Thread(new Empleado("Maria", banco));
+        Thread e5 = new Thread(new Empleado("Julian", banco));
+
+        e1.start();
+        e2.start();
+        e3.start();
+        e4.start();
+        e5.start();
+        //para iniciar y esperar que se terminen
+        e1.join();
+        e2.join();
+        e3.join();
+        e4.join();
+        e5.join();
+        System.out.println("Proceso terminado correctamente!");
+    }
+
+}
+```
+
+## Observaciones y posibles mejoras
+
+- **Paquetes distintos:** `Banco` y `Principal` están en `com.factory.banco`, pero `Empleado` está en `com.f.banco`. Para que compile, los tres deben tener el mismo `package`.
+- **Codificación:** guardar los archivos en UTF-8 para que se vea bien "éxito".
+- **Mensaje duplicado:** `Iniciando pago...` se imprime tanto en `Empleado.run()` como en `Banco.transferir()`.
+
+# Comparación: pago con `banco.transferir()` vs pago dentro de `run()`
+
+## Resumen
+
+La diferencia principal es **dónde ocurre el pago**:
+
+- **Versión original:** el pago se hace en `Banco.transferir()`, un método `synchronized`. Los hilos se turnan y el banco atiende **uno a la vez**.
+- **Versión modificada:** el `sleep` y el mensaje de pago están **dentro de `run()`**, y la llamada a `banco.transferir()` está comentada. Ya no hay ningún bloque sincronizado, así que los 5 hilos pagan **al mismo tiempo**.
+
+## Código de la versión modificada
+
+```java
+package com.s2.banco;
+
+public class Empleado implements Runnable {
+
+    private String nombre;
+    private Banco banco;
+
+    public Empleado(String nombre, Banco banco) {
+        this.nombre = nombre;
+        this.banco = banco;
+    }
+
+    double calcularSalario() {
+        return Math.round(Math.random() * 3000000 + 5000000);
+    }
+
+    @Override
+    public void run() {
+        System.out.println("Iniciando jejeje");
+        double salario = calcularSalario();
+        System.out.println("Iniciando pago...");
+        try {
+            Thread.sleep(2000); // simula la conexión y gestión del pago al banco
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        System.out.println(nombre + " -> Pago de $" + salario + " enviado con éxito!");
+
+        // banco.transferir(nombre, salario);  <- comentado, ya no se usa
+
+        System.out.println("Transferencia realizada con exito!");
+    }
+}
+```
+
+## Qué pasa paso a paso en la versión modificada
+
+1. `Principal` crea los 5 hilos y los lanza con `start()`.
+2. Cada hilo ejecuta su propio `run()` de forma independiente.
+3. Cada uno imprime `Iniciando jejeje`, calcula su salario e imprime `Iniciando pago...`.
+4. Cada uno se duerme 2 segundos **a la vez**. Como el `sleep` es de cada hilo y no hay un lock compartido, no se esperan entre sí.
+5. Los 5 despiertan casi al mismo tiempo, imprimen su pago y la transferencia.
+6. `join()` en `Principal` espera a que todos terminen y luego imprime `Proceso terminado correctamente!`.
+
+**Tiempo total aproximado: 2 segundos** (en la versión original eran unos 10).
+
+## Tabla comparativa
+
+| Aspecto | Versión original (con `banco.transferir()`) | Versión modificada (todo en `run()`) |
+|---|---|---|
+| **Dónde se hace el pago** | En `Banco.transferir()` | Directamente en `Empleado.run()` |
+| **Uso de `synchronized`** | Sí, en `transferir` | No hay ninguno |
+| **Ejecución de los pagos** | Secuencial (en cola, uno a la vez) | Simultánea (los 5 a la vez) |
+| **Tiempo total** | ~10 segundos (5 × 2 s) | ~2 segundos |
+| **Exclusión mutua** | Garantizada por el lock del objeto `Banco` | Ninguna |
+| **Objeto `Banco`** | Se usa como recurso compartido | Se recibe pero **no se usa** |
+| **Orden de la salida por consola** | Los pagos salen uno tras otro, sin mezclarse | Los mensajes de los hilos se **intercalan** |
+| **Responsabilidad de cada clase** | `Banco` gestiona el pago, `Empleado` solo lo solicita | `Empleado` hace todo, `Banco` queda sin función |
+| **Riesgo de condiciones de carrera** | Protegido si el banco manejara datos compartidos | Sin protección si hubiera datos compartidos |
+| **Simula bien un banco real** | Sí, un único canal que atiende de a uno | No, cada empleado paga "por su cuenta" |
+
+## Conclusiones
+
+- Con la versión modificada el programa es **más rápido**, pero solo porque **desaparece la sincronización**. Deja de simular un banco que atiende una transferencia a la vez.
+- Como en este ejemplo no hay datos compartidos (cada hilo solo usa variables propias), **no se produce ninguna condición de carrera**. Pero si el pago modificara algo común, como el saldo del banco, se necesitaría `synchronized` (o un `Lock`).
+- Sacar la lógica del pago de `Banco` rompe el diseño orientado a objetos: `Banco` debería ser quien se encarga de transferir.
+- Cuando las tareas son independientes entre sí, correrlas en paralelo es lo ideal. Cuando comparten un recurso, hay que sincronizarlas. Este ejercicio muestra ambos casos.
+
+## Observaciones sobre el código modificado
+
+- El mensaje `Iniciando jejeje` parece de prueba; conviene quitarlo.
+- El campo `banco` queda sin usar mientras la llamada esté comentada.
+- Para ver bien "éxito", guardar el archivo en UTF-8.
