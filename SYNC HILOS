@@ -1,0 +1,12 @@
+# Sincronizacion de hilos y procesos atomicos
+
+(Al usar el @Override {Run()} será Asincrónico, de lo contrario con Synchronized será Sincronizado)
+
+Cuando la venta de un producto es lineal (sin pasos intermedios ni bifurcaciones), se usa `Run()`.
+Se debe garantizar la integridad de los datos en la sincronización.
+
+### Thread 
+
+Un hilo (thread) es la unidad más pequeña de ejecución dentro de un programa. Un proceso, es decir, tu programa en ejecución, puede tener varios hilos que corren "al mismo tiempo", cada uno con su propia secuencia de instrucciones, pero compartiendo la misma memoria y recursos del proceso.
+
+Un proceso es un programa en ejecución. Cuando abres una aplicación, el sistema operativo crea un proceso para ella: le asigna su propio espacio de memoria, sus recursos (archivos abiertos, conexiones de red) y un identificador (PID).
