@@ -1,0 +1,84 @@
+# Persistencia de datos
+Capacidad de un sistema para guardar información de manera duradera, asegurando que no se pierda al cerrar una aplicación, apagar un dispositivo o sufrir un fallo de energía
+## Jerarquía
+Organización en directorios o carpetas raíz.
+
+## Identificación
+Nombre único y extensión (por ejemplo, `datos.txt`).
+
+## Ruta
+Dirección específica de acceso en el sistema.
+
+## Rutas absolutas vs relativas
+
+| Tipo | Descripción | Ejemplo |
+|------|-------------|---------|
+| Absoluta | Indica la ubicación completa desde la raíz del sistema. | `C:\Usuarios\ana\datos.txt` |
+| Relativa | Se define a partir del directorio de trabajo actual del programa. | `datos/clientes.txt` |
+
+## Clase File
+
+| Acción | Método |
+|--------|--------|
+| Verificar si existe | `exists()` |
+| Permisos | `canWrite()` / `canRead()` |
+| Eliminar | `delete()` |
+| Crear nuevo | `createNewFile()` |
+
+```java
+File file = new File("datos.txt");
+
+if (!file.exists()) {
+    file.createNewFile();
+}
+if (file.canRead() && file.canWrite()) {
+    System.out.println("Se puede leer y escribir");
+}
+```
+
+## Operaciones Principales
+
+| Operación | Descripción | Acción Java |
+|-----------|-------------|-------------|
+| Apertura | Reserva el archivo para flujo de datos. | `new FileReader(file)` |
+| Lectura | Acceso al contenido (bytes/caracteres). | `buffer.readLine()` |
+| Escritura | Sobrescribir o agregar nuevos datos. | `pw.println("texto")` |
+| Cierre | Libera los recursos y el flujo. | `file.close()` |
+
+```java
+// Lectura
+try (BufferedReader buffer = new BufferedReader(new FileReader(file))) {
+    String linea;
+    while ((linea = buffer.readLine()) != null) {
+        System.out.println(linea);
+    }
+}
+
+// Escritura (true = agregar al final, false = sobrescribir)
+try (PrintWriter pw = new PrintWriter(new FileWriter(file, true))) {
+    pw.println("texto");
+}
+```
+
+## Serialización
+
+### Interfaz Serializable
+Convierte objetos complejos en secuencias de bytes.
+
+### Claves
+- Implementar `Serializable`.
+- `ObjectOutputStream` para escribir.
+- `try-with-resources` para auto-cierre.
+
+```java
+public class Persona implements Serializable {
+    private String nombre;
+    private int edad;
+    // constructor, getters y setters
+}
+
+try (ObjectOutputStream oos = new ObjectOutputStream(
+        new FileOutputStream("persona.dat"))) {
+    oos.writeObject(new Persona("Ana", 20));
+}
+```
